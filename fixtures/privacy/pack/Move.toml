@@ -1,0 +1,6 @@
+[package]
+name = "witness_pack_probe"
+edition = "2024"
+
+[dependencies]
+miso_record_shop = { local = "../../.." }

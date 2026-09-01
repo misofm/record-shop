@@ -1,0 +1,9 @@
+[package]
+name = "miso_record_shop"
+edition = "2024"
+license = "Apache-2.0"
+authors = ["Miso Labs, Inc. (build@miso.network)"]
+
+[dependencies]
+miso = { git = "https://github.com/misonetwork/protocol.git", rev = "7bda0bb740c32a75ef76c0739cb671b3de77d338" }
+miso_record = { local = "../record" }
