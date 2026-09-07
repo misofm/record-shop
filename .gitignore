@@ -3,3 +3,4 @@ build/
 .coverage_map.mvcov
 traces/
 fixtures/**/Move.lock
+/package_summaries/
