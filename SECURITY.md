@@ -40,7 +40,7 @@ A Floor price deliberately allows arbitrary overpayment, and the entire amount i
 non-refundable at the contract layer. Frontends should make this behavior explicit.
 
 Funds use Sui's native object-address accumulator. Withdrawing proceeds requires
-mutable access to the Release UID, which `miso::release` gates with the matching
+mutable access to the Release UID, which `musicos::release` gates with the matching
 `ReleaseAdminCap`. Operators must ensure the relevant network enables object-funds
 withdrawal before relying on that withdrawal path.
 

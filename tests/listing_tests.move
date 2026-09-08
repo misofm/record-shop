@@ -4,7 +4,7 @@
 #[test_only]
 module miso_record_shop::listing_tests;
 
-use miso::release::{Self, Release, ReleaseAdminCap};
+use musicos::release::{Self, Release, ReleaseAdminCap};
 use miso_record::pressing::{Self, Pressing, PressingAdminCap};
 use miso_record::record::{Self, Record};
 use miso_record_shop::listing::{Self, Listing};
