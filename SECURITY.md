@@ -2,7 +2,7 @@
 
 ## Invariants
 
-- External packages cannot construct `miso_record_shop::witness::Witness` by
+- External packages cannot construct `record_shop::witness::Witness` by
   packing it or by calling its package-visible constructor.
 - A purchase cannot mint unless the bound Pressing currently authorizes that exact
   witness type.
@@ -17,7 +17,7 @@
 - All payment is sent to the stored Release ID; no proceeds remain in a Listing or
   Record Shop-owned object.
 - Record lineage, numbering, buyer, purchase timestamp, Distributor type, and
-  maximum supply are enforced by `miso_record`. Currency and price are attestations
+  maximum supply are enforced by `record`. Currency and price are attestations
   from the authorized Distributor; this Record Shop binds them to the consumed
   `Balance<Currency>`.
 

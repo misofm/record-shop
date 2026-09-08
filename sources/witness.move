@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /// Module-controlled authority used by the Miso Record Shop to mint Records.
-module miso_record_shop::witness;
+module record_shop::witness;
 
 /// The exact witness type a Pressing authorizes for Record Shop purchases.
 ///

@@ -1,6 +1,6 @@
 # miso-record-shop
 
-`miso_record_shop` is the first-party fixed/floor-price sales package for Miso
+`record_shop` is the first-party fixed/floor-price sales package for Miso
 Records on Sui. A `Listing<Currency>` is the complete Record Shop state. There is
 no global Record Shop or Distributor object.
 
@@ -21,12 +21,12 @@ The release administrator creates a Pressing, authorizes the exact witness type,
 creates a Listing, and shares the two independently:
 
 ```move
-pressing.authorize_distributor<miso_record_shop::witness::Witness>(&pressing_cap);
+pressing.authorize_distributor<record_shop::witness::Witness>(&pressing_cap);
 
-let listing = miso_record_shop::listing::new<SUI>(
+let listing = record_shop::listing::new<SUI>(
     &mut pressing,
     &pressing_cap,
-    miso_record_shop::listing::fixed(1_000_000_000),
+    record_shop::listing::fixed(1_000_000_000),
 );
 
 pressing.share();
@@ -66,7 +66,7 @@ administrator can withdraw through `release.uid_mut(&release_cap)` and
 The authorized identity is exactly:
 
 ```text
-miso_record_shop::witness::Witness
+record_shop::witness::Witness
 ```
 
 `Witness` has only `drop`; its constructor is `public(package)`. Production code
@@ -79,7 +79,7 @@ fixtures prove that an external package can neither pack `Witness()` nor call
 The package must be made immutable before any Pressing authorizes its Witness.
 Publish the package, consume its `UpgradeCap` with `package::make_immutable`, verify
 that the capability is gone, and only then authorize
-`miso_record_shop::witness::Witness`.
+`record_shop::witness::Witness`.
 
 ## Verify
 

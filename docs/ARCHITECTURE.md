@@ -29,7 +29,7 @@ the Pressing's cap-gated `uid_mut`; updates compare the capability's bound Press
 ID to the Listing's stored Pressing ID.
 
 The Record Shop does not hold mint authority as an object. A Pressing instead
-authorizes the type `miso_record_shop::witness::Witness`. `purchase` creates the
+authorizes the type `record_shop::witness::Witness`. `purchase` creates the
 drop-only package witness after all sale checks and passes it directly to
 `pressing::mint`.
 

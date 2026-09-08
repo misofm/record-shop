@@ -6,11 +6,11 @@
 /// There is no Record Shop singleton. Each `Listing<Currency>` derives directly
 /// from its Pressing and is independently shared, so currencies and Pressings
 /// remain separate consensus lanes except for their common edition sequence.
-module miso_record_shop::listing;
+module record_shop::listing;
 
-use miso_record::pressing::{Pressing, PressingAdminCap};
-use miso_record::record::{Self, Record};
-use miso_record_shop::witness;
+use record::pressing::{Pressing, PressingAdminCap};
+use record::record::{Self, Record};
+use record_shop::witness;
 use std::type_name::TypeName;
 use sui::{balance::{Self, Balance}, clock::Clock, derived_object, event::emit};
 

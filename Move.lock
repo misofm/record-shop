@@ -22,29 +22,29 @@ use_environment = "mainnet"
 manifest_digest = "E41BBD67BE8940D26C79D78B028477EF5B33BA217A1282C78ACB344CF8A5ECF6"
 deps = { std = "MoveStdlib", sui = "Sui" }
 
-[pinned.mainnet.miso_record]
-source = { git = "https://github.com/misofm/record.git", subdir = ".", rev = "8ece285b087cecf2892a19bcb13a7360e92b2937" }
+[pinned.mainnet.musicos]
+source = { git = "https://github.com/misofm/musicos.git", subdir = ".", rev = "b3d5d4005fe36044d90e318f864dbc8b01de41da" }
 use_environment = "mainnet"
-manifest_digest = "0AF526936899F891FEC132CC073C1CCC7F83F3B04A3155D0FE35B07DD6545AFA"
+manifest_digest = "9BB7116D620D718466F3EA2218898A0A00B583E502281A36C36B4DA5DA9AE625"
+deps = { bps = "bps", share = "share", std = "MoveStdlib", sui = "Sui" }
+
+[pinned.mainnet.record]
+source = { git = "https://github.com/misofm/record.git", subdir = ".", rev = "aaaa01ffecf95b3267bdc99f6cc475f443e3692e" }
+use_environment = "mainnet"
+manifest_digest = "33B69EE97B461BEBC6817EA6242EEC937F49DCCF64B8C8A1EBE475013BF469D4"
 deps = { musicos = "musicos", std = "MoveStdlib", sui = "Sui" }
 
-[pinned.mainnet.miso_record_shop]
+[pinned.mainnet.record_shop]
 source = { root = true }
 use_environment = "mainnet"
-manifest_digest = "6DFAA5603E04ACF5508D8EBFA1126ED06A0CE74BD4D1B898BEBED203B09C4EA9"
-deps = { miso_record = "miso_record", musicos = "musicos", std = "MoveStdlib", sui = "Sui" }
+manifest_digest = "7A36BC92E670C0CC369566BC796CB06AF1DE739A99C0B210D15980A49C65DE80"
+deps = { musicos = "musicos", record = "record", std = "MoveStdlib", sui = "Sui" }
 
-[pinned.mainnet.miso_share]
-source = { git = "https://github.com/misofm/share.git", subdir = ".", rev = "4999b7d639131fbd5b416b14ca798c28c0a6107d" }
+[pinned.mainnet.share]
+source = { git = "https://github.com/misofm/share.git", subdir = ".", rev = "4311b8400272cf641d35569a8a262fc12a957c75" }
 use_environment = "mainnet"
 manifest_digest = "E41BBD67BE8940D26C79D78B028477EF5B33BA217A1282C78ACB344CF8A5ECF6"
 deps = { std = "MoveStdlib", sui = "Sui" }
-
-[pinned.mainnet.musicos]
-source = { git = "https://github.com/misofm/musicos.git", subdir = ".", rev = "4fed48b2b5632122fb677d742881259c65b1bc78" }
-use_environment = "mainnet"
-manifest_digest = "3D6EC55F69996D148A47B5A8FC019706FADD1577DE47748EF1E6CED1DC48B90B"
-deps = { bps = "bps", miso_share = "miso_share", std = "MoveStdlib", sui = "Sui" }
 
 [pinned.testnet.MoveStdlib]
 source = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/move-stdlib", rev = "2a0becb2fcc6989e492981104af67f62f2c9511a" }
@@ -64,26 +64,26 @@ use_environment = "testnet"
 manifest_digest = "5745706258F61D6CE210904B3E6AE87A73CE9D31A6F93BE4718C442529332A87"
 deps = { std = "MoveStdlib", sui = "Sui" }
 
-[pinned.testnet.miso_record]
-source = { git = "https://github.com/misofm/record.git", subdir = ".", rev = "8ece285b087cecf2892a19bcb13a7360e92b2937" }
+[pinned.testnet.musicos]
+source = { git = "https://github.com/misofm/musicos.git", subdir = ".", rev = "b3d5d4005fe36044d90e318f864dbc8b01de41da" }
 use_environment = "testnet"
-manifest_digest = "D95C153BA925AD91ED86AA89EB722F9C65DFAFA5A5B9DBE1981D95D707873F0F"
+manifest_digest = "2B0310BD0BE225E02688BE35EC89B7F53E1494F234743C15A5FA3699DA2F1720"
+deps = { bps = "bps", share = "share", std = "MoveStdlib", sui = "Sui" }
+
+[pinned.testnet.record]
+source = { git = "https://github.com/misofm/record.git", subdir = ".", rev = "aaaa01ffecf95b3267bdc99f6cc475f443e3692e" }
+use_environment = "testnet"
+manifest_digest = "229BA6B0204F5B70BC3DB092CA4F1F9DBD46DB10CB60040B88CE9FCBD931D30D"
 deps = { musicos = "musicos", std = "MoveStdlib", sui = "Sui" }
 
-[pinned.testnet.miso_record_shop]
+[pinned.testnet.record_shop]
 source = { root = true }
 use_environment = "testnet"
-manifest_digest = "0EF683895BFAF48F22E06821D281B26C2801605F7B00CCEB6446AA63157ACD37"
-deps = { miso_record = "miso_record", musicos = "musicos", std = "MoveStdlib", sui = "Sui" }
+manifest_digest = "65172D3E3774F7E77603F1E1CE1A1888C19ACCB37493AB36C0DF3DF4A0D6B783"
+deps = { musicos = "musicos", record = "record", std = "MoveStdlib", sui = "Sui" }
 
-[pinned.testnet.miso_share]
-source = { git = "https://github.com/misofm/share.git", subdir = ".", rev = "4999b7d639131fbd5b416b14ca798c28c0a6107d" }
+[pinned.testnet.share]
+source = { git = "https://github.com/misofm/share.git", subdir = ".", rev = "4311b8400272cf641d35569a8a262fc12a957c75" }
 use_environment = "testnet"
 manifest_digest = "5745706258F61D6CE210904B3E6AE87A73CE9D31A6F93BE4718C442529332A87"
 deps = { std = "MoveStdlib", sui = "Sui" }
-
-[pinned.testnet.musicos]
-source = { git = "https://github.com/misofm/musicos.git", subdir = ".", rev = "4fed48b2b5632122fb677d742881259c65b1bc78" }
-use_environment = "testnet"
-manifest_digest = "8ABEF6728361420B2EDD62D2E4292AEE53C7FB6EE6DD6953C4CB77A522CA8AA7"
-deps = { bps = "bps", miso_share = "miso_share", std = "MoveStdlib", sui = "Sui" }

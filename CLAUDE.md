@@ -10,7 +10,7 @@
 ## Project rules
 
 - Use Move 2024 syntax and composable public functions.
-- Preserve `miso_record_shop::witness::Witness` as drop-only with a
+- Preserve `record_shop::witness::Witness` as drop-only with a
   `public(package)` constructor used only by the purchase path.
 - Keep Listings derived directly from Pressings with no singleton Record Shop.
 - Keep `purchase` composable: it returns the Record and forwards all payment to

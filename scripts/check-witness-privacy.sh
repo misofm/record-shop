@@ -25,5 +25,5 @@ check_failure() {
     echo "ok: external $fixture construction is rejected"
 }
 
-check_failure pack "Struct 'miso_record_shop::witness::Witness' can only be instantiated within its defining module"
-check_failure new "Invalid call to 'public(package)' visible function 'miso_record_shop::witness::new'"
+check_failure pack "Struct 'record_shop::witness::Witness' can only be instantiated within its defining module"
+check_failure new "Invalid call to 'public(package)' visible function 'record_shop::witness::new'"

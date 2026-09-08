@@ -2,13 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #[test_only]
-module miso_record_shop::listing_tests;
+module record_shop::listing_tests;
 
 use musicos::release::{Self, Release, ReleaseAdminCap};
-use miso_record::pressing::{Self, Pressing, PressingAdminCap};
-use miso_record::record::{Self, Record};
-use miso_record_shop::listing::{Self, Listing};
-use miso_record_shop::witness::Witness;
+use record::pressing::{Self, Pressing, PressingAdminCap};
+use record::record::{Self, Record};
+use record_shop::listing::{Self, Listing};
+use record_shop::witness::Witness;
 use std::type_name;
 use std::unit_test::{assert_eq, destroy};
 use sui::balance::{Self, Balance};
