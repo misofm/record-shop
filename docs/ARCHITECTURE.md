@@ -22,6 +22,22 @@ the Listing immutably, so reads against one Listing do not mutate it. Every mint
 still mutates the bound Pressing because the Pressing owns the edition-local
 sequence and supply cap.
 
+## Events
+
+Listing events are complete, currency-typed snapshots. Creation records the
+derived Listing, Release, Pressing, actual Pressing admin capability, initial
+pricing kind and amount, and enabled state. Sharing captures the same current
+configuration before `share_object` consumes the owned Listing and emits after
+sharing. Price and state events include the capability, Release and Pressing
+identities plus before/after values; no-op updates emit nothing.
+
+`RecordSoldEvent<Currency>` is emitted after the Pressing mint and Release
+funds deposit. It copies provenance from the returned Record, records the
+accepted pricing snapshot, witness and purchase currency defining names as
+UTF-8 bytes, captures supply before and after mint (including a flattened
+maximum), and reports the exact Release recipient and amount deposited.
+Existing dependency events remain unchanged; the Listing adds no duplicate helper events.
+
 ## Authority
 
 `PressingAdminCap` is the only Listing administration capability. Creation calls
@@ -43,8 +59,9 @@ drop-only package witness after all sale checks and passes it directly to
 4. validate exact Fixed payment or minimum Floor payment;
 5. mint the next Record through the authorized witness;
 6. send the entire nonzero Balance to the Release funds accumulator;
-7. emit `RecordSoldEvent<Currency>` with the accepted Pricing and the returned Record's
-   currency, actual price, buyer, and purchase timestamp getters;
+7. emit `RecordSoldEvent<Currency>` with the accepted pricing snapshot, the returned
+   Record's currency, actual price, buyer, and purchase timestamp, plus supply and
+   proceeds snapshots;
 8. return the Record for PTB composition.
 
 Move transaction atomicity rolls back the sequence increment, Record derivation,

@@ -11,7 +11,7 @@ module record_shop::listing;
 use record::pressing::{Pressing, PressingAdminCap};
 use record::record::{Self, Record};
 use record_shop::witness;
-use std::type_name::TypeName;
+use std::type_name;
 use sui::{balance::{Self, Balance}, clock::Clock, derived_object, event::emit};
 
 // === Structs ===
@@ -52,57 +52,123 @@ public enum State has copy, drop, store {
 /// Emitted when an artist creates a Listing for a Pressing and currency.
 public struct ListingCreatedEvent<phantom Currency> has copy, drop {
     /// The newly created Listing.
-    listing_id: ID,
+    listing_id: address,
     /// The release that receives Listing payments.
-    release_id: ID,
+    release_id: address,
     /// The Pressing sold by the Listing.
-    pressing_id: ID,
-    /// The Listing's initial payment rule.
-    pricing: Pricing,
-    /// The Listing's initial state.
-    state: State,
+    pressing_id: address,
+    /// The admin capability used to create the Listing.
+    pressing_admin_cap_id: address,
+    /// Whether the Listing's initial payment rule requires exact payment.
+    pricing_is_fixed: bool,
+    /// The Listing's initial configured amount.
+    price: u64,
+    /// Whether the Listing initially accepts purchases.
+    enabled: bool,
+}
+
+/// Emitted when a newly-created Listing is shared.
+public struct ListingSharedEvent<phantom Currency> has copy, drop {
+    /// The shared Listing.
+    listing_id: address,
+    /// The release that receives Listing payments.
+    release_id: address,
+    /// The Pressing sold by the Listing.
+    pressing_id: address,
+    /// Whether the Listing's payment rule requires exact payment.
+    pricing_is_fixed: bool,
+    /// The Listing's configured amount.
+    price: u64,
+    /// Whether the Listing accepts purchases.
+    enabled: bool,
 }
 
 /// Emitted when an artist changes a Listing's payment rule.
 public struct ListingPriceChangedEvent<phantom Currency> has copy, drop {
     /// The updated Listing.
-    listing_id: ID,
-    /// The new payment rule.
-    pricing: Pricing,
+    listing_id: address,
+    /// The release that receives Listing payments.
+    release_id: address,
+    /// The Pressing sold by the Listing.
+    pressing_id: address,
+    /// The admin capability used to change the Listing.
+    pressing_admin_cap_id: address,
+    /// Whether the prior payment rule required exact payment.
+    pricing_is_fixed_before: bool,
+    /// The prior configured amount.
+    price_before: u64,
+    /// Whether the new payment rule requires exact payment.
+    pricing_is_fixed_after: bool,
+    /// The new configured amount.
+    price_after: u64,
+    /// Whether the Listing accepts purchases.
+    enabled: bool,
 }
 
 /// Emitted when an artist enables or disables a Listing.
 public struct ListingStateChangedEvent<phantom Currency> has copy, drop {
     /// The updated Listing.
-    listing_id: ID,
-    /// The new Listing state.
-    state: State,
+    listing_id: address,
+    /// The release that receives Listing payments.
+    release_id: address,
+    /// The Pressing sold by the Listing.
+    pressing_id: address,
+    /// The admin capability used to change the Listing.
+    pressing_admin_cap_id: address,
+    /// Whether the current payment rule requires exact payment.
+    pricing_is_fixed: bool,
+    /// The current configured amount.
+    price: u64,
+    /// Whether the Listing accepted purchases before the change.
+    enabled_before: bool,
+    /// Whether the Listing accepts purchases after the change.
+    enabled_after: bool,
 }
 
 /// Emitted after a Listing completes a Record sale.
 public struct RecordSoldEvent<phantom Currency> has copy, drop {
     /// The Listing that completed the sale.
-    listing_id: ID,
+    listing_id: address,
     /// The purchased Record.
-    record_id: ID,
+    record_id: address,
     /// The release that received payment.
-    release_id: ID,
+    release_id: address,
     /// The Pressing that issued the Record.
-    pressing_id: ID,
+    pressing_id: address,
     /// The edition represented by the Pressing.
     edition: u16,
     /// The Record's number within its edition.
     number: u32,
-    /// The defining type of the purchase currency.
-    purchase_currency: TypeName,
+    /// The defining type of the purchase currency, as raw UTF-8 bytes.
+    purchase_currency: vector<u8>,
     /// The amount paid for the Record.
     purchase_price: u64,
     /// The transaction sender who purchased the Record.
     purchased_by: address,
     /// The purchase time in Unix milliseconds from Sui's Clock.
     purchased_timestamp_ms: u64,
-    /// The payment rule accepted for the sale.
-    pricing: Pricing,
+    /// Whether the accepted payment rule required exact payment.
+    pricing_is_fixed: bool,
+    /// The configured amount of the accepted payment rule.
+    price: u64,
+    /// Whether the Listing accepted purchases.
+    enabled: bool,
+    /// The defining type of the distributor that authorized the mint.
+    distributor: vector<u8>,
+    /// Supply immediately before this mint.
+    supply_before: u32,
+    /// Supply delta applied by this mint.
+    supply_delta: u32,
+    /// Supply immediately after this mint.
+    supply_after: u32,
+    /// Whether the Pressing has a maximum supply.
+    has_max_supply: bool,
+    /// The maximum supply, or zero when uncapped.
+    max_supply: u32,
+    /// The Release address receiving payment.
+    payment_recipient: address,
+    /// The complete amount paid, including accepted Floor overpayment.
+    proceeds_amount: u64,
 }
 
 // === Errors ===
@@ -158,11 +224,13 @@ public fun new<Currency>(
     };
 
     emit(ListingCreatedEvent<Currency> {
-        listing_id: object::id(&listing),
-        release_id,
-        pressing_id,
-        pricing,
-        state: State::Enabled,
+        listing_id: object::id(&listing).to_address(),
+        release_id: release_id.to_address(),
+        pressing_id: pressing_id.to_address(),
+        pressing_admin_cap_id: object::id_address(cap),
+        pricing_is_fixed: is_fixed(pricing),
+        price: pricing_amount(pricing),
+        enabled: true,
     });
 
     listing
@@ -170,7 +238,22 @@ public fun new<Currency>(
 
 /// Share a newly created Listing.
 public fun share<Currency>(self: Listing<Currency>) {
+    let listing_id = object::id(&self).to_address();
+    let release_id = self.release_id.to_address();
+    let pressing_id = self.pressing_id.to_address();
+    let pricing = self.pricing;
+    let enabled = self.state == State::Enabled;
+
     transfer::share_object(self);
+
+    emit(ListingSharedEvent<Currency> {
+        listing_id,
+        release_id,
+        pressing_id,
+        pricing_is_fixed: pricing.is_fixed(),
+        price: pricing_amount(pricing),
+        enabled,
+    });
 }
 
 /// Change the payment rule using the capability for the bound Pressing.
@@ -182,10 +265,18 @@ public fun set_price<Currency>(
     self.authorize(cap);
     assert_valid_price(pricing);
     if (self.pricing != pricing) {
+        let pricing_before = self.pricing;
         self.pricing = pricing;
         emit(ListingPriceChangedEvent<Currency> {
-            listing_id: object::id(self),
-            pricing,
+            listing_id: object::id(self).to_address(),
+            release_id: self.release_id.to_address(),
+            pressing_id: self.pressing_id.to_address(),
+            pressing_admin_cap_id: object::id_address(cap),
+            pricing_is_fixed_before: pricing_before.is_fixed(),
+            price_before: pricing_amount(pricing_before),
+            pricing_is_fixed_after: pricing.is_fixed(),
+            price_after: pricing_amount(pricing),
+            enabled: self.state == State::Enabled,
         });
     };
 }
@@ -198,10 +289,17 @@ public fun set_state<Currency>(
 ) {
     self.authorize(cap);
     if (self.state != state) {
+        let state_before = self.state;
         self.state = state;
         emit(ListingStateChangedEvent<Currency> {
-            listing_id: object::id(self),
-            state,
+            listing_id: object::id(self).to_address(),
+            release_id: self.release_id.to_address(),
+            pressing_id: self.pressing_id.to_address(),
+            pressing_admin_cap_id: object::id_address(cap),
+            pricing_is_fixed: self.pricing.is_fixed(),
+            price: pricing_amount(self.pricing),
+            enabled_before: state_before == State::Enabled,
+            enabled_after: self.state == State::Enabled,
         });
     };
 }
@@ -231,21 +329,36 @@ public fun purchase<Currency>(
         Pricing::Floor(floor) => assert!(paid >= floor, EWrongPayment),
     };
 
+    let supply_before = pressing.supply();
+    let max_supply_option = pressing.max_supply();
+    let has_max_supply = max_supply_option.is_some();
+    let max_supply = option::destroy_with_default(max_supply_option, 0);
     let sold = pressing.mint<witness::Witness, Currency>(witness::new(), paid, clock, ctx);
-    payment.send_funds(self.release_id.to_address());
+    let payment_recipient = self.release_id.to_address();
+    payment.send_funds(payment_recipient);
 
     emit(RecordSoldEvent<Currency> {
-        listing_id: object::id(self),
-        record_id: object::id(&sold),
-        release_id: sold.release_id(),
-        pressing_id: sold.pressing_id(),
+        listing_id: object::id(self).to_address(),
+        record_id: object::id(&sold).to_address(),
+        release_id: sold.release_id().to_address(),
+        pressing_id: sold.pressing_id().to_address(),
         edition: sold.edition(),
         number: sold.number(),
-        purchase_currency: sold.purchase_currency(),
+        purchase_currency: sold.purchase_currency().into_string().into_bytes(),
         purchase_price: sold.purchase_price(),
         purchased_by: sold.purchased_by(),
         purchased_timestamp_ms: sold.purchased_timestamp_ms(),
-        pricing,
+        pricing_is_fixed: pricing.is_fixed(),
+        price: pricing_amount(pricing),
+        enabled: self.state == State::Enabled,
+        distributor: type_name::with_defining_ids<witness::Witness>().into_string().into_bytes(),
+        supply_before,
+        supply_delta: 1,
+        supply_after: pressing.supply(),
+        has_max_supply,
+        max_supply,
+        payment_recipient,
+        proceeds_amount: paid,
     });
 
     sold
@@ -326,20 +439,112 @@ fun assert_valid_price(pricing: Pricing) {
     assert!(price > 0, EInvalidPrice);
 }
 
+fun pricing_amount(pricing: Pricing): u64 {
+    match (pricing) {
+        Pricing::Fixed(value) => value,
+        Pricing::Floor(value) => value,
+    }
+}
+
 // === Test Functions ===
 
 #[test_only]
 public fun created_event_fields<Currency>(
     event: ListingCreatedEvent<Currency>,
-): (ID, ID, ID, Pricing, State) {
-    let ListingCreatedEvent { listing_id, release_id, pressing_id, pricing, state } = event;
-    (listing_id, release_id, pressing_id, pricing, state)
+): (address, address, address, address, bool, u64, bool) {
+    let ListingCreatedEvent {
+        listing_id,
+        release_id,
+        pressing_id,
+        pressing_admin_cap_id,
+        pricing_is_fixed,
+        price,
+        enabled,
+    } = event;
+    (
+        listing_id,
+        release_id,
+        pressing_id,
+        pressing_admin_cap_id,
+        pricing_is_fixed,
+        price,
+        enabled,
+    )
+}
+
+#[test_only]
+public fun shared_event_fields<Currency>(
+    event: ListingSharedEvent<Currency>,
+): (address, address, address, bool, u64, bool) {
+    let ListingSharedEvent {
+        listing_id,
+        release_id,
+        pressing_id,
+        pricing_is_fixed,
+        price,
+        enabled,
+    } = event;
+    (listing_id, release_id, pressing_id, pricing_is_fixed, price, enabled)
+}
+
+#[test_only]
+public fun price_changed_event_fields<Currency>(
+    event: ListingPriceChangedEvent<Currency>,
+): (address, address, address, address, bool, u64, bool, u64, bool) {
+    let ListingPriceChangedEvent {
+        listing_id,
+        release_id,
+        pressing_id,
+        pressing_admin_cap_id,
+        pricing_is_fixed_before,
+        price_before,
+        pricing_is_fixed_after,
+        price_after,
+        enabled,
+    } = event;
+    (
+        listing_id,
+        release_id,
+        pressing_id,
+        pressing_admin_cap_id,
+        pricing_is_fixed_before,
+        price_before,
+        pricing_is_fixed_after,
+        price_after,
+        enabled,
+    )
+}
+
+#[test_only]
+public fun state_changed_event_fields<Currency>(
+    event: ListingStateChangedEvent<Currency>,
+): (address, address, address, address, bool, u64, bool, bool) {
+    let ListingStateChangedEvent {
+        listing_id,
+        release_id,
+        pressing_id,
+        pressing_admin_cap_id,
+        pricing_is_fixed,
+        price,
+        enabled_before,
+        enabled_after,
+    } = event;
+    (
+        listing_id,
+        release_id,
+        pressing_id,
+        pressing_admin_cap_id,
+        pricing_is_fixed,
+        price,
+        enabled_before,
+        enabled_after,
+    )
 }
 
 #[test_only]
 public fun sold_event_fields<Currency>(
     event: RecordSoldEvent<Currency>,
-): (ID, ID, ID, ID, u16, u32, TypeName, u64, address, u64, Pricing) {
+): (address, address, address, address, u16, u32, vector<u8>, u64, address, u64, bool, u64, bool, vector<u8>, u32, u32, u32, bool, u32, address, u64) {
     let RecordSoldEvent {
         listing_id,
         record_id,
@@ -351,7 +556,17 @@ public fun sold_event_fields<Currency>(
         purchase_price,
         purchased_by,
         purchased_timestamp_ms,
-        pricing,
+        pricing_is_fixed,
+        price,
+        enabled,
+        distributor,
+        supply_before,
+        supply_delta,
+        supply_after,
+        has_max_supply,
+        max_supply,
+        payment_recipient,
+        proceeds_amount,
     } = event;
     (
         listing_id,
@@ -364,6 +579,16 @@ public fun sold_event_fields<Currency>(
         purchase_price,
         purchased_by,
         purchased_timestamp_ms,
-        pricing,
+        pricing_is_fixed,
+        price,
+        enabled,
+        distributor,
+        supply_before,
+        supply_delta,
+        supply_after,
+        has_max_supply,
+        max_supply,
+        payment_recipient,
+        proceeds_amount,
     )
 }

@@ -128,6 +128,7 @@ fun assert_record_sale(
     purchase_price: u64,
     purchased_by: address,
     purchased_timestamp_ms: u64,
+    configured_price: u64,
     pricing: listing::Pricing,
 ) {
     let (
@@ -141,25 +142,108 @@ fun assert_record_sale(
         event_purchase_price,
         event_purchased_by,
         event_purchased_timestamp_ms,
-        event_pricing,
+        event_pricing_is_fixed,
+        event_price,
+        event_enabled,
+        event_distributor,
+        event_supply_before,
+        event_supply_delta,
+        event_supply_after,
+        event_has_max_supply,
+        event_max_supply,
+        event_payment_recipient,
+        event_proceeds_amount,
     ) = listing::sold_event_fields(sold);
-    assert_eq!(event_listing_id, listing_id);
-    assert_eq!(event_record_id, record_id);
-    assert_eq!(event_release_id, release_id);
-    assert_eq!(event_pressing_id, pressing_id);
+    assert_eq!(event_listing_id, listing_id.to_address());
+    assert_eq!(event_record_id, record_id.to_address());
+    assert_eq!(event_release_id, release_id.to_address());
+    assert_eq!(event_pressing_id, pressing_id.to_address());
     assert_eq!(event_edition, edition);
     assert_eq!(event_number, number);
-    assert_eq!(event_purchase_currency, type_name::with_defining_ids<USD>());
+    assert_eq!(
+        event_purchase_currency,
+        type_name::with_defining_ids<USD>().into_string().into_bytes(),
+    );
     assert_eq!(event_purchase_price, purchase_price);
     assert_eq!(event_purchased_by, purchased_by);
     assert_eq!(event_purchased_timestamp_ms, purchased_timestamp_ms);
-    assert_eq!(event_pricing, pricing);
+    assert_eq!(event_pricing_is_fixed, listing::is_fixed(pricing));
+    assert_eq!(event_price, configured_price);
+    assert!(event_enabled);
+    assert_eq!(
+        event_distributor,
+        type_name::with_defining_ids<Witness>().into_string().into_bytes(),
+    );
+    assert_eq!(event_supply_before, 0);
+    assert_eq!(event_supply_delta, 1);
+    assert_eq!(event_supply_after, 1);
+    assert!(event_has_max_supply);
+    assert_eq!(event_max_supply, 1);
+    assert_eq!(event_payment_recipient, release_id.to_address());
+    assert_eq!(event_proceeds_amount, purchase_price);
+}
+
+fun assert_currency_sale<Currency>(
+    sold: listing::RecordSoldEvent<Currency>,
+    record_id: ID,
+    release_id: ID,
+    pressing_id: ID,
+    currency: vector<u8>,
+    purchase_price: u64,
+    pricing_is_fixed: bool,
+    configured_price: u64,
+    supply_before: u32,
+    supply_after: u32,
+) {
+    let (
+        _,
+        event_record_id,
+        event_release_id,
+        event_pressing_id,
+        _,
+        _,
+        event_currency,
+        event_purchase_price,
+        _,
+        _,
+        event_pricing_is_fixed,
+        event_price,
+        event_enabled,
+        event_distributor,
+        event_supply_before,
+        event_supply_delta,
+        event_supply_after,
+        event_has_max_supply,
+        event_max_supply,
+        event_payment_recipient,
+        event_proceeds_amount,
+    ) = listing::sold_event_fields(sold);
+    assert_eq!(event_record_id, record_id.to_address());
+    assert_eq!(event_release_id, release_id.to_address());
+    assert_eq!(event_pressing_id, pressing_id.to_address());
+    assert_eq!(event_currency, currency);
+    assert_eq!(event_purchase_price, purchase_price);
+    assert_eq!(event_pricing_is_fixed, pricing_is_fixed);
+    assert_eq!(event_price, configured_price);
+    assert!(event_enabled);
+    assert_eq!(
+        event_distributor,
+        type_name::with_defining_ids<Witness>().into_string().into_bytes(),
+    );
+    assert_eq!(event_supply_before, supply_before);
+    assert_eq!(event_supply_delta, 1);
+    assert_eq!(event_supply_after, supply_after);
+    assert!(!event_has_max_supply);
+    assert_eq!(event_max_supply, 0);
+    assert_eq!(event_payment_recipient, release_id.to_address());
+    assert_eq!(event_proceeds_amount, purchase_price);
 }
 
 #[test]
 fun complete_sale_delivers_record_and_release_owner_withdraws_exact_proceeds() {
     let seller = @0xA;
     let buyer = @0xB;
+    let final_recipient = @0xC;
     let price = 25;
     let timestamp_ms = 1_726_000_123;
     let mut scenario = ts::begin(seller);
@@ -246,15 +330,16 @@ fun complete_sale_delivers_record_and_release_owner_withdraws_exact_proceeds() {
         price,
         buyer,
         timestamp_ms,
+        price,
         listing::fixed(price),
     );
 
     ts::return_shared(listing);
     ts::return_shared(pressing);
     ts::return_shared(clock);
-    transfer::public_transfer(record, buyer);
+    transfer::public_transfer(record, final_recipient);
 
-    scenario.next_tx(buyer);
+    scenario.next_tx(final_recipient);
     let owned_record = scenario.take_from_sender<Record>();
     assert_eq!(object::id(&owned_record), record_id);
     owned_record.destroy();
@@ -281,6 +366,7 @@ fun complete_sale_delivers_record_and_release_owner_withdraws_exact_proceeds() {
 fun two_currencies_have_distinct_listings_and_share_one_pressing_sequence() {
     let mut ctx = tx_context::dummy();
     let (mut release, release_cap) = a_release(&mut ctx);
+    let release_id = object::id(&release);
     let (mut pressing, pressing_cap) =
         pressing::new(&mut release, &release_cap, 1, option::none());
     pressing.authorize_distributor<Witness>(&pressing_cap);
@@ -317,6 +403,35 @@ fun two_currencies_have_distinct_listings_and_share_one_pressing_sequence() {
     assert_eq!(pressing.supply(), 2);
     assert_eq!(object::id_address(&first), record::derive_address(pressing_id, 1));
     assert_eq!(object::id_address(&second), record::derive_address(pressing_id, 2));
+
+    let mut usd_sold = event::events_by_type<listing::RecordSoldEvent<USD>>();
+    let mut eur_sold = event::events_by_type<listing::RecordSoldEvent<EUR>>();
+    assert_eq!(usd_sold.length(), 1);
+    assert_eq!(eur_sold.length(), 1);
+    assert_currency_sale(
+        usd_sold.pop_back(),
+        object::id(&first),
+        release_id,
+        pressing_id,
+        type_name::with_defining_ids<USD>().into_string().into_bytes(),
+        5,
+        true,
+        5,
+        0,
+        1,
+    );
+    assert_currency_sale(
+        eur_sold.pop_back(),
+        object::id(&second),
+        release_id,
+        pressing_id,
+        type_name::with_defining_ids<EUR>().into_string().into_bytes(),
+        9,
+        false,
+        7,
+        1,
+        2,
+    );
 
     let usd_proceeds = balance::redeem_funds(
         balance::withdraw_funds_from_object<USD>(release.uid_mut(&release_cap), 5),
@@ -361,6 +476,166 @@ fun listing_configuration_is_cap_gated_and_observable() {
     assert!(listing::is_floor(listing.pricing()));
     assert_eq!(listing.price(), 12);
     assert!(listing.is_disabled());
+
+    destroy(listing);
+    destroy(pressing);
+    destroy(cap);
+}
+
+#[test]
+fun listing_events_capture_complete_snapshots_and_only_real_changes() {
+    let mut ctx = tx_context::dummy();
+    let (mut pressing, cap) = a_pressing(id(@0xA), option::none(), &mut ctx);
+    let release_id = pressing.release_id();
+    let pressing_id = object::id(&pressing);
+    let cap_id = object::id(&cap).to_address();
+    let mut listing = listing::new<USD>(&mut pressing, &cap, listing::fixed(10));
+    let listing_id = object::id(&listing).to_address();
+
+    let mut created = event::events_by_type<listing::ListingCreatedEvent<USD>>();
+    assert_eq!(created.length(), 1);
+    let (
+        event_listing_id,
+        event_release_id,
+        event_pressing_id,
+        event_cap_id,
+        event_pricing_is_fixed,
+        event_price,
+        event_enabled,
+    ) = listing::created_event_fields(created.pop_back());
+    assert_eq!(event_listing_id, listing_id);
+    assert_eq!(event_release_id, release_id.to_address());
+    assert_eq!(event_pressing_id, pressing_id.to_address());
+    assert_eq!(event_cap_id, cap_id);
+    assert!(event_pricing_is_fixed);
+    assert_eq!(event_price, 10);
+    assert!(event_enabled);
+
+    listing.set_price(&cap, listing::floor(12));
+    listing.set_price(&cap, listing::floor(12));
+    listing.set_state(&cap, listing::disabled());
+    listing.set_state(&cap, listing::disabled());
+
+    let mut price_changed =
+        event::events_by_type<listing::ListingPriceChangedEvent<USD>>();
+    assert_eq!(price_changed.length(), 1);
+    let (
+        event_listing_id,
+        event_release_id,
+        event_pressing_id,
+        event_cap_id,
+        pricing_is_fixed_before,
+        price_before,
+        pricing_is_fixed_after,
+        price_after,
+        enabled,
+    ) = listing::price_changed_event_fields(price_changed.pop_back());
+    assert_eq!(event_listing_id, listing_id);
+    assert_eq!(event_release_id, release_id.to_address());
+    assert_eq!(event_pressing_id, pressing_id.to_address());
+    assert_eq!(event_cap_id, cap_id);
+    assert!(pricing_is_fixed_before);
+    assert_eq!(price_before, 10);
+    assert!(!pricing_is_fixed_after);
+    assert_eq!(price_after, 12);
+    assert!(enabled);
+
+    let mut state_changed =
+        event::events_by_type<listing::ListingStateChangedEvent<USD>>();
+    assert_eq!(state_changed.length(), 1);
+    let (
+        event_listing_id,
+        event_release_id,
+        event_pressing_id,
+        event_cap_id,
+        pricing_is_fixed,
+        price,
+        enabled_before,
+        enabled_after,
+    ) = listing::state_changed_event_fields(state_changed.pop_back());
+    assert_eq!(event_listing_id, listing_id);
+    assert_eq!(event_release_id, release_id.to_address());
+    assert_eq!(event_pressing_id, pressing_id.to_address());
+    assert_eq!(event_cap_id, cap_id);
+    assert!(!pricing_is_fixed);
+    assert_eq!(price, 12);
+    assert!(enabled_before);
+    assert!(!enabled_after);
+
+    listing.share();
+    let mut shared = event::events_by_type<listing::ListingSharedEvent<USD>>();
+    assert_eq!(shared.length(), 1);
+    let (
+        event_listing_id,
+        event_release_id,
+        event_pressing_id,
+        pricing_is_fixed,
+        price,
+        enabled,
+    ) = listing::shared_event_fields(shared.pop_back());
+    assert_eq!(event_listing_id, listing_id);
+    assert_eq!(event_release_id, release_id.to_address());
+    assert_eq!(event_pressing_id, pressing_id.to_address());
+    assert!(!pricing_is_fixed);
+    assert_eq!(price, 12);
+    assert!(!enabled);
+
+    destroy(pressing);
+    destroy(cap);
+}
+
+#[test]
+fun price_events_distinguish_pricing_variants_and_amount_changes() {
+    let mut ctx = tx_context::dummy();
+    let (mut pressing, cap) = a_pressing(id(@0xA), option::none(), &mut ctx);
+    let mut listing = listing::new<USD>(&mut pressing, &cap, listing::fixed(10));
+    listing.set_price(&cap, listing::floor(10));
+    listing.set_price(&cap, listing::floor(5));
+    listing.set_price(&cap, listing::fixed(7));
+    listing.set_price(&cap, listing::fixed(7));
+    listing.set_price(&cap, listing::fixed(12));
+
+    let mut changed = event::events_by_type<listing::ListingPriceChangedEvent<USD>>();
+    assert_eq!(changed.length(), 4);
+    let (_, _, _, _, fixed_before, before, fixed_after, after, _) =
+        listing::price_changed_event_fields(changed.pop_back());
+    assert!(fixed_before);
+    assert_eq!(before, 7);
+    assert!(fixed_after);
+    assert_eq!(after, 12);
+    let (_, _, _, _, fixed_before, before, fixed_after, after, _) =
+        listing::price_changed_event_fields(changed.pop_back());
+    assert!(!fixed_before);
+    assert_eq!(before, 5);
+    assert!(fixed_after);
+    assert_eq!(after, 7);
+    let (_, _, _, _, fixed_before, before, fixed_after, after, _) =
+        listing::price_changed_event_fields(changed.pop_back());
+    assert!(!fixed_before);
+    assert_eq!(before, 10);
+    assert!(!fixed_after);
+    assert_eq!(after, 5);
+    let (_, _, _, _, fixed_before, before, fixed_after, after, _) =
+        listing::price_changed_event_fields(changed.pop_back());
+    assert!(fixed_before);
+    assert_eq!(before, 10);
+    assert!(!fixed_after);
+    assert_eq!(after, 10);
+
+    listing.set_state(&cap, listing::disabled());
+    listing.set_state(&cap, listing::disabled());
+    listing.set_state(&cap, listing::enabled());
+    listing.set_state(&cap, listing::enabled());
+    let mut states = event::events_by_type<listing::ListingStateChangedEvent<USD>>();
+    assert_eq!(states.length(), 2);
+    let (_, _, _, _, _, _, enabled_before, enabled_after) =
+        listing::state_changed_event_fields(states.pop_back());
+    assert!(!enabled_before);
+    assert!(enabled_after);
+    let (_, _, _, _, _, _, enabled_before, enabled_after) =
+        listing::state_changed_event_fields(states.pop_back());
+    assert!(enabled_before);
+    assert!(!enabled_after);
 
     destroy(listing);
     destroy(pressing);
