@@ -60,30 +60,8 @@ fun purchase_at<Currency>(
     record
 }
 
-fun assert_record_created(
-    created: record::RecordCreatedEvent,
-    record_id: ID,
-    release_id: ID,
-    pressing_id: ID,
-    edition: u16,
-    number: u32,
-) {
-    let (
-        event_record_id,
-        event_release_id,
-        event_pressing_id,
-        event_edition,
-        event_number,
-    ) = record::created_event_fields(created);
-    assert_eq!(event_record_id, record_id);
-    assert_eq!(event_release_id, release_id);
-    assert_eq!(event_pressing_id, pressing_id);
-    assert_eq!(event_edition, edition);
-    assert_eq!(event_number, number);
-}
-
 fun assert_record_purchase(
-    purchased: pressing::RecordPurchasedEvent,
+    purchased: pressing::RecordPurchasedEvent<Witness, USD>,
     record_id: ID,
     release_id: ID,
     pressing_id: ID,
@@ -104,17 +82,18 @@ fun assert_record_purchase(
         event_purchased_by,
         event_purchased_timestamp_ms,
         distributor,
+        _, _, _, _,
     ) = pressing::purchased_event_fields(purchased);
-    assert_eq!(event_record_id, record_id);
-    assert_eq!(event_release_id, release_id);
-    assert_eq!(event_pressing_id, pressing_id);
+    assert_eq!(event_record_id, record_id.to_address());
+    assert_eq!(event_release_id, release_id.to_address());
+    assert_eq!(event_pressing_id, pressing_id.to_address());
     assert_eq!(event_edition, edition);
     assert_eq!(event_number, number);
-    assert_eq!(event_purchase_currency, type_name::with_defining_ids<USD>());
+    assert_eq!(event_purchase_currency, type_name::with_defining_ids<USD>().into_string());
     assert_eq!(event_purchase_price, purchase_price);
     assert_eq!(event_purchased_by, purchased_by);
     assert_eq!(event_purchased_timestamp_ms, purchased_timestamp_ms);
-    assert_eq!(distributor, type_name::with_defining_ids<Witness>());
+    assert_eq!(distributor, type_name::with_defining_ids<Witness>().into_string());
 }
 
 fun assert_record_sale(
@@ -292,18 +271,10 @@ fun complete_sale_delivers_record_and_release_owner_withdraws_exact_proceeds() {
     assert_eq!(pressing.supply(), 1);
     assert_eq!(pressing.max_supply(), option::some(1));
 
-    let mut created = event::events_by_type<record::RecordCreatedEvent>();
-    assert_eq!(created.length(), 1);
-    assert_record_created(
-        created.pop_back(),
-        record_id,
-        release_id,
-        pressing_id,
-        7,
-        1,
-    );
+    // The complete Pressing purchase event replaces the redundant creation event.
+    assert_eq!(event::events_by_type<record::RecordCreatedEvent>().length(), 0);
 
-    let mut purchased = event::events_by_type<pressing::RecordPurchasedEvent>();
+    let mut purchased = event::events_by_type<pressing::RecordPurchasedEvent<Witness, USD>>();
     assert_eq!(purchased.length(), 1);
     assert_record_purchase(
         purchased.pop_back(),
