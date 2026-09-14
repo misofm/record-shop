@@ -31,6 +31,8 @@ public struct Listing<phantom Currency> has key {
     pricing: Pricing,
     /// Whether the Listing currently accepts purchases.
     state: State,
+    /// The total gross proceeds paid through this Listing across completed sales.
+    total_proceeds: u128,
 }
 
 /// Payment rule for a Listing.
@@ -221,6 +223,7 @@ public fun new<Currency>(
         pressing_id,
         pricing,
         state: State::Enabled,
+        total_proceeds: 0,
     };
 
     emit(ListingCreatedEvent<Currency> {
@@ -311,7 +314,7 @@ public fun set_state<Currency>(
 /// accumulator; a Floor overpayment is not refunded. The caller decides how to
 /// transfer or compose the returned Record.
 public fun purchase<Currency>(
-    self: &Listing<Currency>,
+    self: &mut Listing<Currency>,
     pressing: &mut Pressing,
     payment: Balance<Currency>,
     expected_pricing: Pricing,
@@ -335,6 +338,7 @@ public fun purchase<Currency>(
     let max_supply = option::destroy_with_default(max_supply_option, 0);
     let sold = pressing.mint<witness::Witness, Currency>(witness::new(), paid, clock, ctx);
     let payment_recipient = self.release_id.to_address();
+    self.total_proceeds = self.total_proceeds + (paid as u128);
     payment.send_funds(payment_recipient);
 
     emit(RecordSoldEvent<Currency> {
@@ -392,6 +396,11 @@ public fun price<Currency>(self: &Listing<Currency>): u64 {
 /// Return this Listing's current state.
 public fun state<Currency>(self: &Listing<Currency>): State {
     self.state
+}
+
+/// Return the total gross proceeds paid through this Listing across completed sales.
+public fun total_proceeds<Currency>(self: &Listing<Currency>): u128 {
+    self.total_proceeds
 }
 
 /// Return whether this Listing currently accepts purchases.

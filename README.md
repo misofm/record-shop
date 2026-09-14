@@ -33,7 +33,7 @@ pressing.share();
 listing.share();
 ```
 
-Buyers pass an immutable Listing, its mutable Pressing, a `Balance<Currency>`,
+Buyers pass a mutable Listing, its mutable Pressing, a `Balance<Currency>`,
 their expected current pricing rule, Sui's Clock, and the transaction context. `purchase`
 returns the Record; the PTB must transfer or otherwise consume it.
 
@@ -54,6 +54,8 @@ transfer::public_transfer(record, recipient);
   same-amount change between Fixed and Floor aborts instead of silently accepting
   new terms.
 - `set_price` and `set_state` require the matching `PressingAdminCap`.
+- `total_proceeds` reports the gross sum of actual payments from completed sales,
+  including any Floor overpayment.
 - The returned Record stores the concrete currency type, actual amount paid,
   transaction sender, and Clock timestamp as immutable purchase provenance.
 
