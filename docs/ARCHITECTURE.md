@@ -33,10 +33,13 @@ identities plus before/after values; no-op updates emit nothing.
 
 `RecordSoldEvent<Currency>` is emitted after the Pressing mint and Release
 funds deposit. It copies provenance from the returned Record, records the
-accepted pricing snapshot, witness and purchase currency defining names as
-UTF-8 bytes, captures supply before and after mint (including a flattened
+accepted pricing snapshot, captures supply before and after mint (including a flattened
 maximum), and reports the exact Release recipient and amount deposited.
 Existing dependency events remain unchanged; the Listing adds no duplicate helper events.
+
+The sale event's phantom `Currency` parameter identifies the payment currency.
+The distributor is always this package's `witness::Witness`, so neither type name
+is duplicated in the event payload.
 
 ## Authority
 

@@ -10,6 +10,10 @@
 ## Project rules
 
 - Use Move 2024 syntax and composable public functions.
+- Identify event types through phantom type parameters when the type is known
+  at emission. Do not duplicate those identities as `TypeName`, strings, or bytes
+  in event payloads. Keep runtime type data only when it cannot be represented
+  by static type parameters; a module-fixed type needs no payload field.
 - Preserve `record_shop::witness::Witness` as drop-only with a
   `public(package)` constructor used only by the purchase path.
 - Keep Listings derived directly from Pressings with no singleton Record Shop.

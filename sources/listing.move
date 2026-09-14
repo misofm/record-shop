@@ -11,7 +11,6 @@ module record_shop::listing;
 use record::pressing::{Pressing, PressingAdminCap};
 use record::record::{Self, Record};
 use record_shop::witness;
-use std::type_name;
 use sui::{balance::{Self, Balance}, clock::Clock, derived_object, event::emit};
 
 // === Structs ===
@@ -141,8 +140,6 @@ public struct RecordSoldEvent<phantom Currency> has copy, drop {
     edition: u16,
     /// The Record's number within its edition.
     number: u32,
-    /// The defining type of the purchase currency, as raw UTF-8 bytes.
-    purchase_currency: vector<u8>,
     /// The amount paid for the Record.
     purchase_price: u64,
     /// The transaction sender who purchased the Record.
@@ -155,8 +152,6 @@ public struct RecordSoldEvent<phantom Currency> has copy, drop {
     price: u64,
     /// Whether the Listing accepted purchases.
     enabled: bool,
-    /// The defining type of the distributor that authorized the mint.
-    distributor: vector<u8>,
     /// Supply immediately before this mint.
     supply_before: u32,
     /// Supply delta applied by this mint.
@@ -348,14 +343,12 @@ public fun purchase<Currency>(
         pressing_id: sold.pressing_id().to_address(),
         edition: sold.edition(),
         number: sold.number(),
-        purchase_currency: sold.purchase_currency().into_string().into_bytes(),
         purchase_price: sold.purchase_price(),
         purchased_by: sold.purchased_by(),
         purchased_timestamp_ms: sold.purchased_timestamp_ms(),
         pricing_is_fixed: pricing.is_fixed(),
         price: pricing_amount(pricing),
         enabled: self.state == State::Enabled,
-        distributor: type_name::with_defining_ids<witness::Witness>().into_string().into_bytes(),
         supply_before,
         supply_delta: 1,
         supply_after: pressing.supply(),
@@ -553,7 +546,7 @@ public fun state_changed_event_fields<Currency>(
 #[test_only]
 public fun sold_event_fields<Currency>(
     event: RecordSoldEvent<Currency>,
-): (address, address, address, address, u16, u32, vector<u8>, u64, address, u64, bool, u64, bool, vector<u8>, u32, u32, u32, bool, u32, address, u64) {
+): (address, address, address, address, u16, u32, u64, address, u64, bool, u64, bool, u32, u32, u32, bool, u32, address, u64) {
     let RecordSoldEvent {
         listing_id,
         record_id,
@@ -561,14 +554,12 @@ public fun sold_event_fields<Currency>(
         pressing_id,
         edition,
         number,
-        purchase_currency,
         purchase_price,
         purchased_by,
         purchased_timestamp_ms,
         pricing_is_fixed,
         price,
         enabled,
-        distributor,
         supply_before,
         supply_delta,
         supply_after,
@@ -584,14 +575,12 @@ public fun sold_event_fields<Currency>(
         pressing_id,
         edition,
         number,
-        purchase_currency,
         purchase_price,
         purchased_by,
         purchased_timestamp_ms,
         pricing_is_fixed,
         price,
         enabled,
-        distributor,
         supply_before,
         supply_delta,
         supply_after,

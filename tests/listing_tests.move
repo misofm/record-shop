@@ -117,14 +117,12 @@ fun assert_record_sale(
         event_pressing_id,
         event_edition,
         event_number,
-        event_purchase_currency,
         event_purchase_price,
         event_purchased_by,
         event_purchased_timestamp_ms,
         event_pricing_is_fixed,
         event_price,
         event_enabled,
-        event_distributor,
         event_supply_before,
         event_supply_delta,
         event_supply_after,
@@ -139,20 +137,12 @@ fun assert_record_sale(
     assert_eq!(event_pressing_id, pressing_id.to_address());
     assert_eq!(event_edition, edition);
     assert_eq!(event_number, number);
-    assert_eq!(
-        event_purchase_currency,
-        type_name::with_defining_ids<USD>().into_string().into_bytes(),
-    );
     assert_eq!(event_purchase_price, purchase_price);
     assert_eq!(event_purchased_by, purchased_by);
     assert_eq!(event_purchased_timestamp_ms, purchased_timestamp_ms);
     assert_eq!(event_pricing_is_fixed, listing::is_fixed(pricing));
     assert_eq!(event_price, configured_price);
     assert!(event_enabled);
-    assert_eq!(
-        event_distributor,
-        type_name::with_defining_ids<Witness>().into_string().into_bytes(),
-    );
     assert_eq!(event_supply_before, 0);
     assert_eq!(event_supply_delta, 1);
     assert_eq!(event_supply_after, 1);
@@ -167,7 +157,6 @@ fun assert_currency_sale<Currency>(
     record_id: ID,
     release_id: ID,
     pressing_id: ID,
-    currency: vector<u8>,
     purchase_price: u64,
     pricing_is_fixed: bool,
     configured_price: u64,
@@ -181,14 +170,12 @@ fun assert_currency_sale<Currency>(
         event_pressing_id,
         _,
         _,
-        event_currency,
         event_purchase_price,
         _,
         _,
         event_pricing_is_fixed,
         event_price,
         event_enabled,
-        event_distributor,
         event_supply_before,
         event_supply_delta,
         event_supply_after,
@@ -200,15 +187,10 @@ fun assert_currency_sale<Currency>(
     assert_eq!(event_record_id, record_id.to_address());
     assert_eq!(event_release_id, release_id.to_address());
     assert_eq!(event_pressing_id, pressing_id.to_address());
-    assert_eq!(event_currency, currency);
     assert_eq!(event_purchase_price, purchase_price);
     assert_eq!(event_pricing_is_fixed, pricing_is_fixed);
     assert_eq!(event_price, configured_price);
     assert!(event_enabled);
-    assert_eq!(
-        event_distributor,
-        type_name::with_defining_ids<Witness>().into_string().into_bytes(),
-    );
     assert_eq!(event_supply_before, supply_before);
     assert_eq!(event_supply_delta, 1);
     assert_eq!(event_supply_after, supply_after);
@@ -387,7 +369,6 @@ fun two_currencies_have_distinct_listings_and_share_one_pressing_sequence() {
         object::id(&first),
         release_id,
         pressing_id,
-        type_name::with_defining_ids<USD>().into_string().into_bytes(),
         5,
         true,
         5,
@@ -399,7 +380,6 @@ fun two_currencies_have_distinct_listings_and_share_one_pressing_sequence() {
         object::id(&second),
         release_id,
         pressing_id,
-        type_name::with_defining_ids<EUR>().into_string().into_bytes(),
         9,
         false,
         7,
