@@ -77,11 +77,9 @@ fun assert_record_purchase(
         event_pressing_id,
         event_edition,
         event_number,
-        event_purchase_currency,
         event_purchase_price,
         event_purchased_by,
         event_purchased_timestamp_ms,
-        distributor,
         _, _, _, _,
     ) = pressing::purchased_event_fields(purchased);
     assert_eq!(event_record_id, record_id.to_address());
@@ -89,11 +87,9 @@ fun assert_record_purchase(
     assert_eq!(event_pressing_id, pressing_id.to_address());
     assert_eq!(event_edition, edition);
     assert_eq!(event_number, number);
-    assert_eq!(event_purchase_currency, type_name::with_defining_ids<USD>().into_string());
     assert_eq!(event_purchase_price, purchase_price);
     assert_eq!(event_purchased_by, purchased_by);
     assert_eq!(event_purchased_timestamp_ms, purchased_timestamp_ms);
-    assert_eq!(distributor, type_name::with_defining_ids<Witness>().into_string());
 }
 
 fun assert_record_sale(
