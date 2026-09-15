@@ -68,22 +68,6 @@ public struct ListingCreatedEvent<phantom Currency> has copy, drop {
     enabled: bool,
 }
 
-/// Emitted when a newly-created Listing is shared.
-public struct ListingSharedEvent<phantom Currency> has copy, drop {
-    /// The shared Listing.
-    listing_id: address,
-    /// The release that receives Listing payments.
-    release_id: address,
-    /// The Pressing sold by the Listing.
-    pressing_id: address,
-    /// Whether the Listing's payment rule requires exact payment.
-    pricing_is_fixed: bool,
-    /// The Listing's configured amount.
-    price: u64,
-    /// Whether the Listing accepts purchases.
-    enabled: bool,
-}
-
 /// Emitted when an artist changes a Listing's payment rule.
 public struct ListingPriceChangedEvent<phantom Currency> has copy, drop {
     /// The updated Listing.
@@ -236,22 +220,7 @@ public fun new<Currency>(
 
 /// Share a newly created Listing.
 public fun share<Currency>(self: Listing<Currency>) {
-    let listing_id = object::id(&self).to_address();
-    let release_id = self.release_id.to_address();
-    let pressing_id = self.pressing_id.to_address();
-    let pricing = self.pricing;
-    let enabled = self.state == State::Enabled;
-
     transfer::share_object(self);
-
-    emit(ListingSharedEvent<Currency> {
-        listing_id,
-        release_id,
-        pressing_id,
-        pricing_is_fixed: pricing.is_fixed(),
-        price: pricing_amount(pricing),
-        enabled,
-    });
 }
 
 /// Change the payment rule using the capability for the bound Pressing.
@@ -472,21 +441,6 @@ public fun created_event_fields<Currency>(
         price,
         enabled,
     )
-}
-
-#[test_only]
-public fun shared_event_fields<Currency>(
-    event: ListingSharedEvent<Currency>,
-): (address, address, address, bool, u64, bool) {
-    let ListingSharedEvent {
-        listing_id,
-        release_id,
-        pressing_id,
-        pricing_is_fixed,
-        price,
-        enabled,
-    } = event;
-    (listing_id, release_id, pressing_id, pricing_is_fixed, price, enabled)
 }
 
 #[test_only]
