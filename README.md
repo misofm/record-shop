@@ -83,6 +83,13 @@ Publish the package, consume its `UpgradeCap` with `package::make_immutable`, ve
 that the capability is gone, and only then authorize
 `record_shop::witness::Witness`.
 
+## Events
+
+`ListingCreatedEvent` reports initial pricing, enabled state, and Release/Pressing
+and capability provenance. Sharing is silent. Price and availability changes
+retain their own events, including changes made before sharing; purchases retain
+their payment and Record provenance events.
+
 ## Verify
 
 Requires Sui CLI 1.78 or a compatible toolchain:
@@ -91,7 +98,7 @@ Requires Sui CLI 1.78 or a compatible toolchain:
 make verify
 ```
 
-This runs the 18 Move tests, including the complete ownership and proceeds flow,
+This runs the Move tests, including the complete ownership and proceeds flow,
 then confirms both external witness-construction probes fail for the expected
 privacy diagnostics.
 

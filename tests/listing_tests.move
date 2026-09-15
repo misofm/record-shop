@@ -475,8 +475,8 @@ fun listing_configuration_is_cap_gated_and_observable() {
 
 #[test]
 fun listing_events_capture_complete_snapshots_and_only_real_changes() {
-    let mut ctx = tx_context::dummy();
-    let (mut pressing, cap) = a_pressing(id(@0xA), option::none(), &mut ctx);
+    let mut scenario = ts::begin(@0xA);
+    let (mut pressing, cap) = a_pressing(id(@0xA), option::none(), scenario.ctx());
     let release_id = pressing.release_id();
     let pressing_id = object::id(&pressing);
     let cap_id = object::id(&cap).to_address();
@@ -553,26 +553,23 @@ fun listing_events_capture_complete_snapshots_and_only_real_changes() {
     assert!(enabled_before);
     assert!(!enabled_after);
 
+    let event_count = event::num_events();
     listing.share();
-    let mut shared = event::events_by_type<listing::ListingSharedEvent<USD>>();
-    assert_eq!(shared.length(), 1);
-    let (
-        event_listing_id,
-        event_release_id,
-        event_pressing_id,
-        pricing_is_fixed,
-        price,
-        enabled,
-    ) = listing::shared_event_fields(shared.pop_back());
-    assert_eq!(event_listing_id, listing_id);
-    assert_eq!(event_release_id, release_id.to_address());
-    assert_eq!(event_pressing_id, pressing_id.to_address());
-    assert!(!pricing_is_fixed);
-    assert_eq!(price, 12);
-    assert!(!enabled);
+    assert_eq!(event::num_events(), event_count);
+
+    scenario.next_tx(@0xB);
+    let listing = scenario.take_shared<Listing<USD>>();
+    assert_eq!(object::id(&listing).to_address(), listing_id);
+    assert_eq!(listing.release_id(), release_id);
+    assert_eq!(listing.pressing_id(), pressing_id);
+    assert_eq!(listing.pricing(), listing::floor(12));
+    assert_eq!(listing.state(), listing::disabled());
+    assert_eq!(listing.total_proceeds(), 0);
+    ts::return_shared(listing);
 
     destroy(pressing);
     destroy(cap);
+    scenario.end();
 }
 
 #[test]
