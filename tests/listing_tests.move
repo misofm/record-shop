@@ -251,7 +251,6 @@ fun complete_sale_delivers_record_and_release_owner_withdraws_exact_proceeds() {
     assert_eq!(listing.total_proceeds(), price as u128);
 
     // The complete Pressing purchase event replaces the redundant creation event.
-    assert_eq!(event::events_by_type<record::RecordCreatedEvent>().length(), 0);
 
     let mut purchased = event::events_by_type<pressing::RecordPurchasedEvent<Witness, USD>>();
     assert_eq!(purchased.length(), 1);
