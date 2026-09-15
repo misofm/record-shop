@@ -29,7 +29,7 @@ manifest_digest = "43EF3B938D7EEE22C9657EB418DA5C9E9984D02D725538A82E7D3268322F9
 deps = { bps = "bps", share = "share", std = "MoveStdlib", sui = "Sui" }
 
 [pinned.mainnet.record]
-source = { git = "https://github.com/misofm/record.git", subdir = ".", rev = "0d8011a0cef0cd738c3d70473f2168d77b61ec89" }
+source = { git = "https://github.com/misofm/record.git", subdir = ".", rev = "8073eca9275fa1067a48ca0141330fb8902f3b2b" }
 use_environment = "mainnet"
 manifest_digest = "03968DD36585B3062DA13567904C5F7340107FD42D39C42FD5405539309965A6"
 deps = { musicos = "musicos", std = "MoveStdlib", sui = "Sui" }
@@ -37,7 +37,7 @@ deps = { musicos = "musicos", std = "MoveStdlib", sui = "Sui" }
 [pinned.mainnet.record_shop]
 source = { root = true }
 use_environment = "mainnet"
-manifest_digest = "E1A3A3CA575EBF238AD5F12092B02183276E61CAC7B1BF297BE39411BF182550"
+manifest_digest = "E242959EBFF82C8A48FE6431F5AC8016C8E2DE03983F86DD7AE11F29C7DF684D"
 deps = { musicos = "musicos", record = "record", std = "MoveStdlib", sui = "Sui" }
 
 [pinned.mainnet.share]
@@ -71,7 +71,7 @@ manifest_digest = "6746D45CC0E1EB869033BB4778064980963001D5C9C151F74A7A7D1DDEAE0
 deps = { bps = "bps", share = "share", std = "MoveStdlib", sui = "Sui" }
 
 [pinned.testnet.record]
-source = { git = "https://github.com/misofm/record.git", subdir = ".", rev = "0d8011a0cef0cd738c3d70473f2168d77b61ec89" }
+source = { git = "https://github.com/misofm/record.git", subdir = ".", rev = "8073eca9275fa1067a48ca0141330fb8902f3b2b" }
 use_environment = "testnet"
 manifest_digest = "327CB87181BC6DB6F35542C90078CDB38AC50A7AD91EE448FE1708E1405167D4"
 deps = { musicos = "musicos", std = "MoveStdlib", sui = "Sui" }
@@ -79,7 +79,7 @@ deps = { musicos = "musicos", std = "MoveStdlib", sui = "Sui" }
 [pinned.testnet.record_shop]
 source = { root = true }
 use_environment = "testnet"
-manifest_digest = "E03AC7F43AA8DDDF76258BBAA496330842BC6F89B7200EBD47C9CF85DCAB5B20"
+manifest_digest = "27BDAA0E27448F183B77A4C66A374B71407225B661EF1F1ACB2BF779CDFD848B"
 deps = { musicos = "musicos", record = "record", std = "MoveStdlib", sui = "Sui" }
 
 [pinned.testnet.share]
