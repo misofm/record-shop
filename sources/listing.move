@@ -142,9 +142,7 @@ public struct RecordSoldEvent<phantom Currency> has copy, drop {
     supply_delta: u32,
     /// Supply immediately after this mint.
     supply_after: u32,
-    /// Whether the Pressing has a maximum supply.
-    has_max_supply: bool,
-    /// The maximum supply, or zero when uncapped.
+    /// The immutable lifetime issuance ceiling for this edition.
     max_supply: u32,
     /// The Release address receiving payment.
     payment_recipient: address,
@@ -297,9 +295,7 @@ public fun purchase<Currency>(
     };
 
     let supply_before = pressing.supply();
-    let max_supply_option = pressing.max_supply();
-    let has_max_supply = max_supply_option.is_some();
-    let max_supply = option::destroy_with_default(max_supply_option, 0);
+    let max_supply = pressing.max_supply();
     let sold = pressing.mint<witness::Witness, Currency>(witness::new(), paid, clock, ctx);
     let payment_recipient = self.release_id.to_address();
     self.total_proceeds = self.total_proceeds + (paid as u128);
@@ -321,7 +317,6 @@ public fun purchase<Currency>(
         supply_before,
         supply_delta: 1,
         supply_after: pressing.supply(),
-        has_max_supply,
         max_supply,
         payment_recipient,
         proceeds_amount: paid,
@@ -500,7 +495,7 @@ public fun state_changed_event_fields<Currency>(
 #[test_only]
 public fun sold_event_fields<Currency>(
     event: RecordSoldEvent<Currency>,
-): (address, address, address, address, u16, u32, u64, address, u64, bool, u64, bool, u32, u32, u32, bool, u32, address, u64) {
+): (address, address, address, address, u16, u32, u64, address, u64, bool, u64, bool, u32, u32, u32, u32, address, u64) {
     let RecordSoldEvent {
         listing_id,
         record_id,
@@ -517,7 +512,6 @@ public fun sold_event_fields<Currency>(
         supply_before,
         supply_delta,
         supply_after,
-        has_max_supply,
         max_supply,
         payment_recipient,
         proceeds_amount,
@@ -538,7 +532,6 @@ public fun sold_event_fields<Currency>(
         supply_before,
         supply_delta,
         supply_after,
-        has_max_supply,
         max_supply,
         payment_recipient,
         proceeds_amount,

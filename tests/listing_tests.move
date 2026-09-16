@@ -30,7 +30,7 @@ fun a_release(ctx: &mut TxContext): (Release, ReleaseAdminCap) {
 
 fun a_pressing(
     release_id: ID,
-    max_supply: Option<u32>,
+    max_supply: u32,
     ctx: &mut TxContext,
 ): (Pressing, PressingAdminCap) {
     pressing::new_for_testing(release_id, 1, max_supply, ctx)
@@ -122,7 +122,6 @@ fun assert_record_sale(
         event_supply_before,
         event_supply_delta,
         event_supply_after,
-        event_has_max_supply,
         event_max_supply,
         event_payment_recipient,
         event_proceeds_amount,
@@ -142,7 +141,6 @@ fun assert_record_sale(
     assert_eq!(event_supply_before, 0);
     assert_eq!(event_supply_delta, 1);
     assert_eq!(event_supply_after, 1);
-    assert!(event_has_max_supply);
     assert_eq!(event_max_supply, 1);
     assert_eq!(event_payment_recipient, release_id.to_address());
     assert_eq!(event_proceeds_amount, purchase_price);
@@ -175,7 +173,6 @@ fun assert_currency_sale<Currency>(
         event_supply_before,
         event_supply_delta,
         event_supply_after,
-        event_has_max_supply,
         event_max_supply,
         event_payment_recipient,
         event_proceeds_amount,
@@ -190,8 +187,7 @@ fun assert_currency_sale<Currency>(
     assert_eq!(event_supply_before, supply_before);
     assert_eq!(event_supply_delta, 1);
     assert_eq!(event_supply_after, supply_after);
-    assert!(!event_has_max_supply);
-    assert_eq!(event_max_supply, 0);
+    assert_eq!(event_max_supply, 100);
     assert_eq!(event_payment_recipient, release_id.to_address());
     assert_eq!(event_proceeds_amount, purchase_price);
 }
@@ -208,12 +204,12 @@ fun complete_sale_delivers_record_and_release_owner_withdraws_exact_proceeds() {
     let (mut release, release_cap) = a_release(scenario.ctx());
     let release_id = object::id(&release);
     let (mut pressing, pressing_cap) =
-        pressing::new(&mut release, &release_cap, 7, option::some(1));
+        pressing::new(&mut release, &release_cap, 1, 1);
     let pressing_id = object::id(&pressing);
     pressing.authorize_distributor<Witness>(&pressing_cap);
     let listing = listing::new<USD>(&mut pressing, &pressing_cap, listing::fixed(price));
     let listing_id = object::id(&listing);
-    assert_eq!(pressing_id.to_address(), pressing::derive_address(release_id, 7));
+    assert_eq!(pressing_id.to_address(), pressing::derive_address(release_id, 1));
     assert_eq!(listing_id.to_address(), listing::derive_address<USD>(pressing_id));
 
     let clock = clock_at(timestamp_ms, scenario.ctx());
@@ -239,7 +235,7 @@ fun complete_sale_delivers_record_and_release_owner_withdraws_exact_proceeds() {
 
     assert_eq!(record.release_id(), release_id);
     assert_eq!(record.pressing_id(), pressing_id);
-    assert_eq!(record.edition(), 7);
+    assert_eq!(record.edition(), 1);
     assert_eq!(record.number(), 1);
     assert_eq!(record.purchase_currency(), type_name::with_defining_ids<USD>());
     assert_eq!(record.purchase_price(), price);
@@ -247,7 +243,7 @@ fun complete_sale_delivers_record_and_release_owner_withdraws_exact_proceeds() {
     assert_eq!(record.purchased_timestamp_ms(), timestamp_ms);
     assert_eq!(object::id_address(&record), record::derive_address(pressing_id, 1));
     assert_eq!(pressing.supply(), 1);
-    assert_eq!(pressing.max_supply(), option::some(1));
+    assert_eq!(pressing.max_supply(), 1);
     assert_eq!(listing.total_proceeds(), price as u128);
 
     // The complete Pressing purchase event replaces the redundant creation event.
@@ -259,7 +255,7 @@ fun complete_sale_delivers_record_and_release_owner_withdraws_exact_proceeds() {
         record_id,
         release_id,
         pressing_id,
-        7,
+        1,
         1,
         price,
         buyer,
@@ -274,7 +270,7 @@ fun complete_sale_delivers_record_and_release_owner_withdraws_exact_proceeds() {
         record_id,
         release_id,
         pressing_id,
-        7,
+        1,
         1,
         price,
         buyer,
@@ -317,7 +313,7 @@ fun two_currencies_have_distinct_listings_and_share_one_pressing_sequence() {
     let (mut release, release_cap) = a_release(&mut ctx);
     let release_id = object::id(&release);
     let (mut pressing, pressing_cap) =
-        pressing::new(&mut release, &release_cap, 1, option::none());
+        pressing::new(&mut release, &release_cap, 1, 100);
     pressing.authorize_distributor<Witness>(&pressing_cap);
     let pressing_id = object::id(&pressing);
     let mut usd = listing::new<USD>(&mut pressing, &pressing_cap, listing::fixed(5));
@@ -406,7 +402,7 @@ fun completed_sales_accumulate_actual_payments_as_total_proceeds() {
     let mut ctx = tx_context::dummy();
     let (mut release, release_cap) = a_release(&mut ctx);
     let (mut pressing, pressing_cap) =
-        pressing::new(&mut release, &release_cap, 1, option::none());
+        pressing::new(&mut release, &release_cap, 1, 100);
     pressing.authorize_distributor<Witness>(&pressing_cap);
     let mut listing = listing::new<USD>(&mut pressing, &pressing_cap, listing::floor(7));
 
@@ -445,7 +441,7 @@ fun completed_sales_accumulate_actual_payments_as_total_proceeds() {
 #[test]
 fun listing_configuration_is_cap_gated_and_observable() {
     let mut ctx = tx_context::dummy();
-    let (mut pressing, cap) = a_pressing(id(@0xA), option::none(), &mut ctx);
+    let (mut pressing, cap) = a_pressing(id(@0xA), 100, &mut ctx);
     let mut listing = listing::new<USD>(&mut pressing, &cap, listing::fixed(10));
     assert_eq!(listing.release_id(), id(@0xA));
     assert_eq!(listing.pressing_id(), object::id(&pressing));
@@ -476,7 +472,7 @@ fun listing_configuration_is_cap_gated_and_observable() {
 #[test]
 fun listing_events_capture_complete_snapshots_and_only_real_changes() {
     let mut scenario = ts::begin(@0xA);
-    let (mut pressing, cap) = a_pressing(id(@0xA), option::none(), scenario.ctx());
+    let (mut pressing, cap) = a_pressing(id(@0xA), 100, scenario.ctx());
     let release_id = pressing.release_id();
     let pressing_id = object::id(&pressing);
     let cap_id = object::id(&cap).to_address();
@@ -575,7 +571,7 @@ fun listing_events_capture_complete_snapshots_and_only_real_changes() {
 #[test]
 fun price_events_distinguish_pricing_variants_and_amount_changes() {
     let mut ctx = tx_context::dummy();
-    let (mut pressing, cap) = a_pressing(id(@0xA), option::none(), &mut ctx);
+    let (mut pressing, cap) = a_pressing(id(@0xA), 100, &mut ctx);
     let mut listing = listing::new<USD>(&mut pressing, &cap, listing::fixed(10));
     listing.set_price(&cap, listing::floor(10));
     listing.set_price(&cap, listing::floor(5));
@@ -636,7 +632,7 @@ fun price_events_distinguish_pricing_variants_and_amount_changes() {
 )]
 fun unauthorized_record_shop_cannot_mint() {
     let mut ctx = tx_context::dummy();
-    let (mut pressing, cap) = a_pressing(id(@0xA), option::none(), &mut ctx);
+    let (mut pressing, cap) = a_pressing(id(@0xA), 100, &mut ctx);
     let mut listing = listing::new<USD>(&mut pressing, &cap, listing::fixed(10));
     let record = purchase_at(
         &mut listing,
@@ -658,7 +654,7 @@ fun unauthorized_record_shop_cannot_mint() {
 )]
 fun revoked_record_shop_cannot_mint() {
     let mut ctx = tx_context::dummy();
-    let (mut pressing, cap) = a_pressing(id(@0xA), option::none(), &mut ctx);
+    let (mut pressing, cap) = a_pressing(id(@0xA), 100, &mut ctx);
     pressing.authorize_distributor<Witness>(&cap);
     let mut listing = listing::new<USD>(&mut pressing, &cap, listing::fixed(10));
     pressing.revoke_distributor<Witness>(&cap);
@@ -679,8 +675,8 @@ fun revoked_record_shop_cannot_mint() {
 #[test, expected_failure(abort_code = listing::EWrongPressing, location = listing)]
 fun listing_rejects_a_different_pressing() {
     let mut ctx = tx_context::dummy();
-    let (mut first, first_cap) = a_pressing(id(@0xA), option::none(), &mut ctx);
-    let (mut second, second_cap) = a_pressing(id(@0xB), option::none(), &mut ctx);
+    let (mut first, first_cap) = a_pressing(id(@0xA), 100, &mut ctx);
+    let (mut second, second_cap) = a_pressing(id(@0xB), 100, &mut ctx);
     first.authorize_distributor<Witness>(&first_cap);
     second.authorize_distributor<Witness>(&second_cap);
     let mut listing = listing::new<USD>(&mut first, &first_cap, listing::fixed(10));
@@ -706,7 +702,7 @@ fun listing_rejects_a_different_pressing() {
 )]
 fun pressing_cannot_create_the_same_currency_listing_twice() {
     let mut ctx = tx_context::dummy();
-    let (mut pressing, cap) = a_pressing(id(@0xA), option::none(), &mut ctx);
+    let (mut pressing, cap) = a_pressing(id(@0xA), 100, &mut ctx);
     let first = listing::new<USD>(&mut pressing, &cap, listing::fixed(10));
     let second = listing::new<USD>(&mut pressing, &cap, listing::floor(10));
     destroy(first);
@@ -718,7 +714,7 @@ fun pressing_cannot_create_the_same_currency_listing_twice() {
 #[test, expected_failure(abort_code = pressing::EUnauthorized, location = pressing)]
 fun listing_creation_rejects_a_foreign_pressing_cap() {
     let mut ctx = tx_context::dummy();
-    let (mut pressing, cap) = a_pressing(id(@0xA), option::none(), &mut ctx);
+    let (mut pressing, cap) = a_pressing(id(@0xA), 100, &mut ctx);
     let foreign = pressing::foreign_admin_cap_for_testing(id(@0xBAD), &mut ctx);
     let listing = listing::new<USD>(&mut pressing, &foreign, listing::fixed(10));
     destroy(listing);
@@ -730,7 +726,7 @@ fun listing_creation_rejects_a_foreign_pressing_cap() {
 #[test, expected_failure(abort_code = listing::EUnauthorized, location = listing)]
 fun listing_update_rejects_a_foreign_pressing_cap() {
     let mut ctx = tx_context::dummy();
-    let (mut pressing, cap) = a_pressing(id(@0xA), option::none(), &mut ctx);
+    let (mut pressing, cap) = a_pressing(id(@0xA), 100, &mut ctx);
     let foreign = pressing::foreign_admin_cap_for_testing(id(@0xBAD), &mut ctx);
     let mut listing = listing::new<USD>(&mut pressing, &cap, listing::fixed(10));
     listing.set_price(&foreign, listing::fixed(11));
@@ -743,7 +739,7 @@ fun listing_update_rejects_a_foreign_pressing_cap() {
 #[test, expected_failure(abort_code = listing::EDisabled, location = listing)]
 fun disabled_listing_rejects_purchase() {
     let mut ctx = tx_context::dummy();
-    let (mut pressing, cap) = a_pressing(id(@0xA), option::none(), &mut ctx);
+    let (mut pressing, cap) = a_pressing(id(@0xA), 100, &mut ctx);
     pressing.authorize_distributor<Witness>(&cap);
     let mut listing = listing::new<USD>(&mut pressing, &cap, listing::fixed(10));
     listing.set_state(&cap, listing::disabled());
@@ -764,7 +760,7 @@ fun disabled_listing_rejects_purchase() {
 #[test, expected_failure(abort_code = listing::EWrongPayment, location = listing)]
 fun fixed_listing_rejects_underpayment() {
     let mut ctx = tx_context::dummy();
-    let (mut pressing, cap) = a_pressing(id(@0xA), option::none(), &mut ctx);
+    let (mut pressing, cap) = a_pressing(id(@0xA), 100, &mut ctx);
     pressing.authorize_distributor<Witness>(&cap);
     let mut listing = listing::new<USD>(&mut pressing, &cap, listing::fixed(10));
     let record = purchase_at(
@@ -784,7 +780,7 @@ fun fixed_listing_rejects_underpayment() {
 #[test, expected_failure(abort_code = listing::EWrongPayment, location = listing)]
 fun fixed_listing_rejects_overpayment() {
     let mut ctx = tx_context::dummy();
-    let (mut pressing, cap) = a_pressing(id(@0xA), option::none(), &mut ctx);
+    let (mut pressing, cap) = a_pressing(id(@0xA), 100, &mut ctx);
     pressing.authorize_distributor<Witness>(&cap);
     let mut listing = listing::new<USD>(&mut pressing, &cap, listing::fixed(10));
     let record = purchase_at(
@@ -804,7 +800,7 @@ fun fixed_listing_rejects_overpayment() {
 #[test, expected_failure(abort_code = listing::EPriceChanged, location = listing)]
 fun expected_pricing_rejects_stale_repricing() {
     let mut ctx = tx_context::dummy();
-    let (mut pressing, cap) = a_pressing(id(@0xA), option::none(), &mut ctx);
+    let (mut pressing, cap) = a_pressing(id(@0xA), 100, &mut ctx);
     pressing.authorize_distributor<Witness>(&cap);
     let mut listing = listing::new<USD>(&mut pressing, &cap, listing::fixed(10));
     listing.set_price(&cap, listing::fixed(11));
@@ -825,7 +821,7 @@ fun expected_pricing_rejects_stale_repricing() {
 #[test, expected_failure(abort_code = listing::EPriceChanged, location = listing)]
 fun expected_fixed_rule_rejects_equal_amount_floor_repricing() {
     let mut ctx = tx_context::dummy();
-    let (mut pressing, cap) = a_pressing(id(@0xA), option::none(), &mut ctx);
+    let (mut pressing, cap) = a_pressing(id(@0xA), 100, &mut ctx);
     pressing.authorize_distributor<Witness>(&cap);
     let mut listing = listing::new<USD>(&mut pressing, &cap, listing::fixed(10));
     listing.set_price(&cap, listing::floor(10));
@@ -846,7 +842,7 @@ fun expected_fixed_rule_rejects_equal_amount_floor_repricing() {
 #[test, expected_failure(abort_code = listing::EPriceChanged, location = listing)]
 fun expected_floor_rule_rejects_equal_amount_fixed_repricing() {
     let mut ctx = tx_context::dummy();
-    let (mut pressing, cap) = a_pressing(id(@0xA), option::none(), &mut ctx);
+    let (mut pressing, cap) = a_pressing(id(@0xA), 100, &mut ctx);
     pressing.authorize_distributor<Witness>(&cap);
     let mut listing = listing::new<USD>(&mut pressing, &cap, listing::floor(10));
     listing.set_price(&cap, listing::fixed(10));
@@ -867,7 +863,7 @@ fun expected_floor_rule_rejects_equal_amount_fixed_repricing() {
 #[test, expected_failure(abort_code = listing::EWrongPayment, location = listing)]
 fun floor_listing_rejects_underpayment() {
     let mut ctx = tx_context::dummy();
-    let (mut pressing, cap) = a_pressing(id(@0xA), option::none(), &mut ctx);
+    let (mut pressing, cap) = a_pressing(id(@0xA), 100, &mut ctx);
     pressing.authorize_distributor<Witness>(&cap);
     let mut listing = listing::new<USD>(&mut pressing, &cap, listing::floor(10));
     let record = purchase_at(
@@ -887,7 +883,7 @@ fun floor_listing_rejects_underpayment() {
 #[test, expected_failure(abort_code = pressing::EMaxSupplyReached, location = pressing)]
 fun maximum_supply_boundary_rejects_the_next_purchase() {
     let mut ctx = tx_context::dummy();
-    let (mut pressing, cap) = a_pressing(id(@0xA), option::some(1), &mut ctx);
+    let (mut pressing, cap) = a_pressing(id(@0xA), 1, &mut ctx);
     pressing.authorize_distributor<Witness>(&cap);
     let mut listing = listing::new<USD>(&mut pressing, &cap, listing::fixed(10));
     let first = purchase_at(
@@ -916,8 +912,42 @@ fun maximum_supply_boundary_rejects_the_next_purchase() {
 #[test, expected_failure(abort_code = listing::EInvalidPrice, location = listing)]
 fun listing_rejects_zero_price() {
     let mut ctx = tx_context::dummy();
-    let (mut pressing, cap) = a_pressing(id(@0xA), option::none(), &mut ctx);
+    let (mut pressing, cap) = a_pressing(id(@0xA), 100, &mut ctx);
     let listing = listing::new<USD>(&mut pressing, &cap, listing::fixed(0));
+    destroy(listing);
+    destroy(pressing);
+    destroy(cap);
+}
+
+#[test, expected_failure(abort_code = pressing::EMaxSupplyReached, location = pressing)]
+fun currencies_share_the_same_supply_cap() {
+    let mut ctx = tx_context::dummy();
+    let (mut pressing, cap) = a_pressing(id(@0xA), 1, &mut ctx);
+    pressing.authorize_distributor<Witness>(&cap);
+    let mut usd = listing::new<USD>(&mut pressing, &cap, listing::fixed(10));
+    let mut eur = listing::new<EUR>(&mut pressing, &cap, listing::fixed(20));
+    purchase_at(&mut usd, &mut pressing, payment(10), listing::fixed(10), 0, &mut ctx).destroy();
+    purchase_at(&mut eur, &mut pressing, payment(20), listing::fixed(20), 1, &mut ctx).destroy();
+    destroy(usd);
+    destroy(eur);
+    destroy(pressing);
+    destroy(cap);
+}
+
+#[test]
+fun sale_event_preserves_u16_maximum_edition() {
+    let mut ctx = tx_context::dummy();
+    let (mut pressing, cap) = pressing::new_for_testing(id(@0xA), 65_535, 1, &mut ctx);
+    pressing.authorize_distributor<Witness>(&cap);
+    let mut listing = listing::new<USD>(&mut pressing, &cap, listing::fixed(10));
+    let record = purchase_at(&mut listing, &mut pressing, payment(10), listing::fixed(10), 0, &mut ctx);
+    assert_eq!(record.edition(), 65_535);
+    let mut events = event::events_by_type<listing::RecordSoldEvent<USD>>();
+    assert_record_sale(
+        events.pop_back(), object::id(&listing), object::id(&record), id(@0xA),
+        object::id(&pressing), 65_535, 1, 10, ctx.sender(), 0, 10, listing::fixed(10),
+    );
+    record.destroy();
     destroy(listing);
     destroy(pressing);
     destroy(cap);

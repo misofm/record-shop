@@ -21,6 +21,11 @@
   from the authorized Distributor; this Record Shop binds them to the consumed
   `Balance<Currency>`.
 
+- Every Pressing has a positive immutable lifetime supply ceiling shared across
+  currencies and distributors. Burns and distributor changes cannot replenish it.
+- Editions start at 1 and require the previous edition claim on the same Release;
+  this does not require sellout or prevent additional editions.
+
 ## Trust boundaries
 
 The holder of a `PressingAdminCap` can reprice, disable, or enable its Listing and

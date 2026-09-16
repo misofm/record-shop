@@ -26,15 +26,13 @@ Pressing because the Pressing owns the edition-local sequence and supply cap.
 
 Listing events are complete, currency-typed snapshots. Creation records the
 derived Listing, Release, Pressing, actual Pressing admin capability, initial
-pricing kind and amount, and enabled state. Sharing captures the same current
-configuration before `share_object` consumes the owned Listing and emits after
-sharing. Price and state events include the capability, Release and Pressing
+pricing kind and amount, and enabled state. Sharing is silent. Price and state events include the capability, Release and Pressing
 identities plus before/after values; no-op updates emit nothing.
 
 `RecordSoldEvent<Currency>` is emitted after the Pressing mint and Release
 funds deposit. It copies provenance from the returned Record, records the
-accepted pricing snapshot, captures supply before and after mint (including a flattened
-maximum), and reports the exact Release recipient and amount deposited.
+accepted pricing snapshot, captures supply before and after mint (including the mandatory
+immutable maximum), and reports the exact Release recipient and amount deposited.
 Existing dependency events remain unchanged; the Listing adds no duplicate helper events.
 
 The sale event's phantom `Currency` parameter identifies the payment currency.
@@ -77,3 +75,11 @@ The package is intended to be made immutable when published. Future Record Shop
 designs ship as separate packages with explicit migration paths, so Listings do
 not carry package-upgrade versions. Its `UpgradeCap` must be consumed before any
 Pressing authorizes the package Witness.
+
+## Edition supply
+
+All currencies and distributors share the Pressing lifetime issuance ceiling.
+`RecordSoldEvent.max_supply` is always positive; there is no optional-cap flag or
+zero sentinel. The Pressing enforces exhaustion atomically before payment is sent.
+Listing enabled state is independent of sold-out status. Sequential edition
+creation is enforced by Record using the previous derived claim on the Release.

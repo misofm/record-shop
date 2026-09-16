@@ -13,7 +13,10 @@ Release
 
 Each Listing is permanently bound to one Pressing, one Release, and one currency.
 It derives directly from the Pressing, so the same currency cannot be listed twice
-for one Pressing. Different currencies receive different Listing IDs.
+for one Pressing. Different currencies receive different Listing IDs, but consume the same mandatory,
+immutable Pressing supply cap. Destruction does not replenish this lifetime cap.
+An enabled Listing is sold out when its Pressing reaches the cap.
+Editions are `u16` values created sequentially from 1 by the Record package.
 
 ## Sale flow
 
@@ -106,3 +109,7 @@ See [architecture](docs/ARCHITECTURE.md) and [security](SECURITY.md) for the
 invariants and trust boundaries.
 
 License: Apache-2.0.
+
+The Record dependency is pinned to the coordinated mandatory-cap and sequential-
+edition revision. The new Record layout and sale-event schema require fresh
+publication and updated client bindings.
