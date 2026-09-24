@@ -37,8 +37,8 @@ listing.share();
 ```
 
 Buyers pass a mutable Listing, its mutable Pressing, a `Balance<Currency>`,
-their expected current pricing rule, Sui's Clock, and the transaction context. `purchase`
-returns the Record; the PTB must transfer or otherwise consume it.
+their expected current pricing rule, and Sui's Clock. `purchase` returns the Record;
+the PTB must transfer or otherwise consume it.
 
 ```move
 let record = listing.purchase(
@@ -46,7 +46,6 @@ let record = listing.purchase(
     payment,
     expected_pricing,
     clock,
-    ctx,
 );
 transfer::public_transfer(record, recipient);
 ```
@@ -59,8 +58,9 @@ transfer::public_transfer(record, recipient);
 - `set_price` and `set_state` require the matching `PressingAdminCap`.
 - `total_proceeds` reports the gross sum of actual payments from completed sales,
   including any Floor overpayment.
-- The returned Record stores the concrete currency type, actual amount paid,
-  transaction sender, and Clock timestamp as immutable purchase provenance.
+- The returned Record stores the concrete currency type, actual amount paid, and
+  Clock timestamp as immutable purchase provenance. It does not store the buyer;
+  indexers read the buyer as the sale event's transaction sender.
 
 All proceeds go to the Release object's native Sui funds accumulator. The Release
 administrator can withdraw through `release.uid_mut(&release_cap)` and

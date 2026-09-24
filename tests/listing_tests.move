@@ -55,7 +55,7 @@ fun purchase_at<Currency>(
     ctx: &mut TxContext,
 ): Record {
     let clock = clock_at(timestamp_ms, ctx);
-    let record = listing.purchase(pressing, payment, expected_pricing, &clock, ctx);
+    let record = listing.purchase(pressing, payment, expected_pricing, &clock);
     clock.destroy_for_testing();
     record
 }
@@ -68,7 +68,6 @@ fun assert_record_purchase(
     edition: u16,
     number: u32,
     purchase_price: u64,
-    purchased_by: address,
     purchased_timestamp_ms: u64,
 ) {
     let (
@@ -78,7 +77,6 @@ fun assert_record_purchase(
         event_edition,
         event_number,
         event_purchase_price,
-        event_purchased_by,
         event_purchased_timestamp_ms,
         _, _, _, _,
     ) = pressing::purchased_event_fields(purchased);
@@ -88,7 +86,6 @@ fun assert_record_purchase(
     assert_eq!(event_edition, edition);
     assert_eq!(event_number, number);
     assert_eq!(event_purchase_price, purchase_price);
-    assert_eq!(event_purchased_by, purchased_by);
     assert_eq!(event_purchased_timestamp_ms, purchased_timestamp_ms);
 }
 
@@ -101,7 +98,6 @@ fun assert_record_sale(
     edition: u16,
     number: u32,
     purchase_price: u64,
-    purchased_by: address,
     purchased_timestamp_ms: u64,
     configured_price: u64,
     pricing: listing::Pricing,
@@ -114,7 +110,6 @@ fun assert_record_sale(
         event_edition,
         event_number,
         event_purchase_price,
-        event_purchased_by,
         event_purchased_timestamp_ms,
         event_pricing_is_fixed,
         event_price,
@@ -133,7 +128,6 @@ fun assert_record_sale(
     assert_eq!(event_edition, edition);
     assert_eq!(event_number, number);
     assert_eq!(event_purchase_price, purchase_price);
-    assert_eq!(event_purchased_by, purchased_by);
     assert_eq!(event_purchased_timestamp_ms, purchased_timestamp_ms);
     assert_eq!(event_pricing_is_fixed, listing::is_fixed(pricing));
     assert_eq!(event_price, configured_price);
@@ -165,7 +159,6 @@ fun assert_currency_sale<Currency>(
         _,
         _,
         event_purchase_price,
-        _,
         _,
         event_pricing_is_fixed,
         event_price,
@@ -229,7 +222,6 @@ fun complete_sale_delivers_record_and_release_owner_withdraws_exact_proceeds() {
         payment(price),
         listing::fixed(price),
         &clock,
-        scenario.ctx(),
     );
     let record_id = object::id(&record);
 
@@ -239,7 +231,6 @@ fun complete_sale_delivers_record_and_release_owner_withdraws_exact_proceeds() {
     assert_eq!(record.number(), 1);
     assert_eq!(record.purchase_currency(), type_name::with_defining_ids<USD>());
     assert_eq!(record.purchase_price(), price);
-    assert_eq!(record.purchased_by(), buyer);
     assert_eq!(record.purchased_timestamp_ms(), timestamp_ms);
     assert_eq!(object::id_address(&record), record::derive_address(pressing_id, 1));
     assert_eq!(pressing.supply(), 1);
@@ -258,7 +249,6 @@ fun complete_sale_delivers_record_and_release_owner_withdraws_exact_proceeds() {
         1,
         1,
         price,
-        buyer,
         timestamp_ms,
     );
 
@@ -273,7 +263,6 @@ fun complete_sale_delivers_record_and_release_owner_withdraws_exact_proceeds() {
         1,
         1,
         price,
-        buyer,
         timestamp_ms,
         price,
         listing::fixed(price),
@@ -945,7 +934,7 @@ fun sale_event_preserves_u16_maximum_edition() {
     let mut events = event::events_by_type<listing::RecordSoldEvent<USD>>();
     assert_record_sale(
         events.pop_back(), object::id(&listing), object::id(&record), id(@0xA),
-        object::id(&pressing), 65_535, 1, 10, ctx.sender(), 0, 10, listing::fixed(10),
+        object::id(&pressing), 65_535, 1, 10, 0, 10, listing::fixed(10),
     );
     record.destroy();
     destroy(listing);

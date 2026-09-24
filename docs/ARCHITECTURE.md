@@ -62,7 +62,7 @@ drop-only package witness after all sale checks and passes it directly to
 6. add the actual payment to the Listing's total proceeds;
 7. send the entire nonzero Balance to the Release funds accumulator;
 8. emit `RecordSoldEvent<Currency>` with the accepted pricing snapshot, the returned
-   Record's currency, actual price, buyer, and purchase timestamp, plus supply and
+   Record's currency, actual price, and purchase timestamp, plus supply and
    proceeds snapshots;
 9. return the Record for PTB composition.
 

@@ -126,8 +126,6 @@ public struct RecordSoldEvent<phantom Currency> has copy, drop {
     number: u32,
     /// The amount paid for the Record.
     purchase_price: u64,
-    /// The transaction sender who purchased the Record.
-    purchased_by: address,
     /// The purchase time in Unix milliseconds from Sui's Clock.
     purchased_timestamp_ms: u64,
     /// Whether the accepted payment rule required exact payment.
@@ -281,7 +279,6 @@ public fun purchase<Currency>(
     payment: Balance<Currency>,
     expected_pricing: Pricing,
     clock: &Clock,
-    ctx: &mut TxContext,
 ): Record {
     assert!(object::id(pressing) == self.pressing_id, EWrongPressing);
     assert!(self.state == State::Enabled, EDisabled);
@@ -296,7 +293,7 @@ public fun purchase<Currency>(
 
     let supply_before = pressing.supply();
     let max_supply = pressing.max_supply();
-    let sold = pressing.mint<witness::Witness, Currency>(witness::new(), paid, clock, ctx);
+    let sold = pressing.mint<witness::Witness, Currency>(witness::new(), paid, clock);
     let payment_recipient = self.release_id.to_address();
     self.total_proceeds = self.total_proceeds + (paid as u128);
     payment.send_funds(payment_recipient);
@@ -309,7 +306,6 @@ public fun purchase<Currency>(
         edition: sold.edition(),
         number: sold.number(),
         purchase_price: sold.purchase_price(),
-        purchased_by: sold.purchased_by(),
         purchased_timestamp_ms: sold.purchased_timestamp_ms(),
         pricing_is_fixed: pricing.is_fixed(),
         price: pricing_amount(pricing),
@@ -495,7 +491,7 @@ public fun state_changed_event_fields<Currency>(
 #[test_only]
 public fun sold_event_fields<Currency>(
     event: RecordSoldEvent<Currency>,
-): (address, address, address, address, u16, u32, u64, address, u64, bool, u64, bool, u32, u32, u32, u32, address, u64) {
+): (address, address, address, address, u16, u32, u64, u64, bool, u64, bool, u32, u32, u32, u32, address, u64) {
     let RecordSoldEvent {
         listing_id,
         record_id,
@@ -504,7 +500,6 @@ public fun sold_event_fields<Currency>(
         edition,
         number,
         purchase_price,
-        purchased_by,
         purchased_timestamp_ms,
         pricing_is_fixed,
         price,
@@ -524,7 +519,6 @@ public fun sold_event_fields<Currency>(
         edition,
         number,
         purchase_price,
-        purchased_by,
         purchased_timestamp_ms,
         pricing_is_fixed,
         price,

@@ -16,7 +16,7 @@
   equal-amount changes between Fixed and Floor semantics.
 - All payment is sent to the stored Release ID; no proceeds remain in a Listing or
   Record Shop-owned object.
-- Record lineage, numbering, buyer, purchase timestamp, Distributor type, and
+- Record lineage, numbering, purchase timestamp, Distributor type, and
   maximum supply are enforced by `record`. Currency and price are attestations
   from the authorized Distributor; this Record Shop binds them to the consumed
   `Balance<Currency>`.
@@ -49,11 +49,11 @@ mutable access to the Release UID, which `musicos::release` gates with the match
 `ReleaseAdminCap`. Operators must ensure the relevant network enables object-funds
 withdrawal before relying on that withdrawal path.
 
-`Record.purchased_by` is the transaction sender, not necessarily the final recipient.
-The caller must consume the returned Record in the same PTB, normally with
-`transfer::public_transfer`; this permits gifts and composition. `RecordSoldEvent` records
-the accepted Pricing and complete purchase provenance but does not claim a final
-owner.
+A Record stores neither its buyer nor its recipient; the event's transaction sender
+is the buyer. The caller must consume the returned Record in the same PTB, normally
+with `transfer::public_transfer`; this permits gifts and composition. `RecordSoldEvent`
+records the accepted Pricing and complete purchase provenance but does not claim a
+final owner.
 
 ## Verification
 

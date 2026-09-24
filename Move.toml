@@ -6,4 +6,4 @@ authors = ["Miso Labs, Inc. (build@miso.network)"]
 
 [dependencies]
 musicos = { git = "https://github.com/misofm/musicos.git", rev = "5d16455af2ff1ccaa80f86475fec95d95df41e06" }
-record = { git = "https://github.com/misofm/record.git", rev = "7943c2dd1b60d7b294fe66bca2e0936a68d44b66" }
+record = { git = "https://github.com/misofm/record.git", rev = "8b996367e2d828b27b76d310c65b7eeda84c72df" }
