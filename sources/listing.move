@@ -127,7 +127,7 @@ public struct RecordSoldEvent<phantom Currency> has copy, drop {
     /// The amount paid for the Record.
     purchase_price: u64,
     /// The purchase time in Unix milliseconds from Sui's Clock.
-    purchased_timestamp_ms: u64,
+    purchased_at_ms: u64,
     /// Whether the accepted payment rule required exact payment.
     pricing_is_fixed: bool,
     /// The configured amount of the accepted payment rule.
@@ -306,7 +306,7 @@ public fun purchase<Currency>(
         edition: sold.edition(),
         number: sold.number(),
         purchase_price: sold.purchase_price(),
-        purchased_timestamp_ms: sold.purchased_timestamp_ms(),
+        purchased_at_ms: sold.purchased_at_ms(),
         pricing_is_fixed: pricing.is_fixed(),
         price: pricing_amount(pricing),
         enabled: self.state == State::Enabled,
@@ -500,7 +500,7 @@ public fun sold_event_fields<Currency>(
         edition,
         number,
         purchase_price,
-        purchased_timestamp_ms,
+        purchased_at_ms,
         pricing_is_fixed,
         price,
         enabled,
@@ -519,7 +519,7 @@ public fun sold_event_fields<Currency>(
         edition,
         number,
         purchase_price,
-        purchased_timestamp_ms,
+        purchased_at_ms,
         pricing_is_fixed,
         price,
         enabled,

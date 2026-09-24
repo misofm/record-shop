@@ -68,7 +68,7 @@ fun assert_record_purchase(
     edition: u16,
     number: u32,
     purchase_price: u64,
-    purchased_timestamp_ms: u64,
+    purchased_at_ms: u64,
 ) {
     let (
         event_record_id,
@@ -77,7 +77,7 @@ fun assert_record_purchase(
         event_edition,
         event_number,
         event_purchase_price,
-        event_purchased_timestamp_ms,
+        event_purchased_at_ms,
         _, _, _, _,
     ) = pressing::purchased_event_fields(purchased);
     assert_eq!(event_record_id, record_id.to_address());
@@ -86,7 +86,7 @@ fun assert_record_purchase(
     assert_eq!(event_edition, edition);
     assert_eq!(event_number, number);
     assert_eq!(event_purchase_price, purchase_price);
-    assert_eq!(event_purchased_timestamp_ms, purchased_timestamp_ms);
+    assert_eq!(event_purchased_at_ms, purchased_at_ms);
 }
 
 fun assert_record_sale(
@@ -98,7 +98,7 @@ fun assert_record_sale(
     edition: u16,
     number: u32,
     purchase_price: u64,
-    purchased_timestamp_ms: u64,
+    purchased_at_ms: u64,
     configured_price: u64,
     pricing: listing::Pricing,
 ) {
@@ -110,7 +110,7 @@ fun assert_record_sale(
         event_edition,
         event_number,
         event_purchase_price,
-        event_purchased_timestamp_ms,
+        event_purchased_at_ms,
         event_pricing_is_fixed,
         event_price,
         event_enabled,
@@ -128,7 +128,7 @@ fun assert_record_sale(
     assert_eq!(event_edition, edition);
     assert_eq!(event_number, number);
     assert_eq!(event_purchase_price, purchase_price);
-    assert_eq!(event_purchased_timestamp_ms, purchased_timestamp_ms);
+    assert_eq!(event_purchased_at_ms, purchased_at_ms);
     assert_eq!(event_pricing_is_fixed, listing::is_fixed(pricing));
     assert_eq!(event_price, configured_price);
     assert!(event_enabled);
@@ -231,7 +231,7 @@ fun complete_sale_delivers_record_and_release_owner_withdraws_exact_proceeds() {
     assert_eq!(record.number(), 1);
     assert_eq!(record.purchase_currency(), type_name::with_defining_ids<USD>());
     assert_eq!(record.purchase_price(), price);
-    assert_eq!(record.purchased_timestamp_ms(), timestamp_ms);
+    assert_eq!(record.purchased_at_ms(), timestamp_ms);
     assert_eq!(object::id_address(&record), record::derive_address(pressing_id, 1));
     assert_eq!(pressing.supply(), 1);
     assert_eq!(pressing.max_supply(), 1);

@@ -35,7 +35,7 @@ manifest_digest = "E41BBD67BE8940D26C79D78B028477EF5B33BA217A1282C78ACB344CF8A5E
 deps = { std = "MoveStdlib", sui = "Sui" }
 
 [pinned.mainnet.record]
-source = { git = "https://github.com/misofm/record.git", subdir = ".", rev = "8b996367e2d828b27b76d310c65b7eeda84c72df" }
+source = { git = "https://github.com/misofm/record.git", subdir = ".", rev = "93f83958b0c0f74c25d053252bf383c19dcb7eb8" }
 use_environment = "mainnet"
 manifest_digest = "AD31BBCDE1DCC44F110C0BCC6B42C0144E57170817A7627DBFFC0AF0DCCA1F06"
 deps = { musicos = "musicos", std = "MoveStdlib", sui = "Sui" }
@@ -43,7 +43,7 @@ deps = { musicos = "musicos", std = "MoveStdlib", sui = "Sui" }
 [pinned.mainnet.record_shop]
 source = { root = true }
 use_environment = "mainnet"
-manifest_digest = "C795044896D7749B2AB760F015B1EF872FCABBD874F057C2B009615FB49AF611"
+manifest_digest = "6A13C5D63A931EA724C4B3FCBB6EBC382318198BFC759B375E61AA9E8F5358EC"
 deps = { musicos = "musicos", record = "record", std = "MoveStdlib", sui = "Sui" }
 
 [pinned.mainnet.recording_share]
