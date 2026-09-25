@@ -2,7 +2,7 @@
 name = "record_shop"
 edition = "2024"
 license = "Apache-2.0"
-authors = ["Miso Labs, Inc. (build@miso.network)"]
+authors = ["Miso Labs, Inc. (build@miso.fm)"]
 
 [dependencies]
 musicos = { git = "https://github.com/misofm/musicos.git", rev = "5d16455af2ff1ccaa80f86475fec95d95df41e06" }
