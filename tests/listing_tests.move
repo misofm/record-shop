@@ -25,7 +25,7 @@ fun id(address: address): ID {
 }
 
 fun a_release(ctx: &mut TxContext): (Release, ReleaseAdminCap) {
-    release::new_for_testing("Test Release", vector[], ctx)
+    release::new_for_testing(vector[], ctx)
 }
 
 fun a_pressing(
@@ -206,7 +206,7 @@ fun complete_sale_delivers_record_and_release_owner_withdraws_exact_proceeds() {
     assert_eq!(listing_id.to_address(), listing::derive_address<USD>(pressing_id));
 
     let clock = clock_at(timestamp_ms, scenario.ctx());
-    release.publish(&release_cap, &clock);
+    release.publish(&release_cap);
     pressing.share();
     listing.share();
     transfer::public_transfer(release_cap, seller);
