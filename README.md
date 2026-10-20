@@ -56,7 +56,7 @@ transfer::public_transfer(record, recipient);
 - `expected_pricing` compares the complete pricing rule, so a stale amount or a
   same-amount change between Fixed and Floor aborts instead of silently accepting
   new terms.
-- `set_price` and `set_state` require the matching `PressingAdminCap`.
+- `set_price` and `set_enabled` require the matching `PressingAdminCap`.
 - `total_proceeds` reports the gross sum of actual payments from completed sales,
   including any Floor overpayment.
 - The returned Record stores the concrete currency type, actual amount paid, and
@@ -67,7 +67,7 @@ All proceeds go straight to the royalty pools of the Release's tracks through
 [`release_revenue_forwarder`](https://github.com/misofm/release-revenue-forwarder):
 each track's pool address receives `payment / n`, and the rounding remainder goes
 to the Release. No crank is needed between a sale and a holder's claim. A
-`Release` other than the Listing's aborts with `EWrongRelease`.
+`Release` other than the Pressing's aborts with `EWrongRelease`.
 
 ## Witness authority
 
@@ -91,10 +91,16 @@ that the capability is gone, and only then authorize
 
 ## Events
 
-`ListingCreatedEvent` reports initial pricing, enabled state, and Release/Pressing
-and capability provenance. Sharing is silent. Price and availability changes
-retain their own events, including changes made before sharing; purchases retain
-their payment and Record provenance events.
+| Event | Fields |
+|---|---|
+| `ListingCreatedEvent<Currency>` | `listing_id`, `pressing_id`, `pricing` |
+| `ListingPriceChangedEvent<Currency>` | `listing_id`, `pricing` |
+| `ListingEnabledChangedEvent<Currency>` | `listing_id`, `enabled` |
+| `RecordSoldEvent<Currency>` | `listing_id`, `record_id`, `pricing` |
+
+`pricing` is the `Pricing` enum value. Sharing is silent and no-op updates emit
+nothing; changes made before sharing still emit. The amount paid and Record
+number are in the same transaction's `record::pressing::RecordPurchasedEvent`.
 
 ## Verify
 
@@ -112,7 +118,3 @@ See [architecture](docs/ARCHITECTURE.md) and [security](SECURITY.md) for the
 invariants and trust boundaries.
 
 License: Apache-2.0.
-
-The Record dependency is pinned to the coordinated mandatory-cap and sequential-
-edition revision. The new Record layout and sale-event schema require fresh
-publication and updated client bindings.

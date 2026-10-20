@@ -4,11 +4,12 @@
 
 `Listing<phantom Currency>` is a key-only object. Its stored fields are:
 
-- the Release ID read from the Pressing at creation;
 - the exact Pressing ID;
 - `Pricing::Fixed(u64)` or `Pricing::Floor(u64)`;
-- `State::Enabled` or `State::Disabled`;
+- `enabled: bool`;
 - total gross proceeds in the Listing's currency.
+
+The Release is not stored; `purchase` checks it against the Pressing's `release_id`.
 
 The module-private constructor for `ListingKey<Currency>()` is claimed from the
 Pressing UID. This gives a deterministic, claim-once ID without a registry:
@@ -24,16 +25,19 @@ Pressing because the Pressing owns the edition-local sequence and supply cap.
 
 ## Events
 
-Listing events are complete, currency-typed snapshots. Creation records the
-derived Listing, Release, Pressing, actual Pressing admin capability, initial
-pricing kind and amount, and enabled state. Sharing is silent. Price and state events include the capability, Release and Pressing
-identities plus before/after values; no-op updates emit nothing.
+Events are currency-typed and carry only facts that cannot be derived:
 
-`RecordSoldEvent<Currency>` is emitted after the Pressing mint and Release
-funds deposit. It copies provenance from the returned Record, records the
-accepted pricing snapshot, captures supply before and after mint (including the mandatory
-immutable maximum), and reports the exact Release recipient and amount deposited.
-Existing dependency events remain unchanged; the Listing adds no duplicate helper events.
+| Event | Fields |
+|---|---|
+| `ListingCreatedEvent<Currency>` | `listing_id`, `pressing_id`, `pricing` |
+| `ListingPriceChangedEvent<Currency>` | `listing_id`, `pricing` |
+| `ListingEnabledChangedEvent<Currency>` | `listing_id`, `enabled` |
+| `RecordSoldEvent<Currency>` | `listing_id`, `record_id`, `pricing` |
+
+A Listing starts enabled. Sharing is silent, and no-op updates emit nothing.
+`RecordSoldEvent` is emitted after the mint and payment forwarding; the amount
+paid, number, and Pressing are in the same transaction's `RecordPurchasedEvent`,
+and the Release and edition join from `PressingCreatedEvent`.
 
 The sale event's phantom `Currency` parameter identifies the payment currency.
 The distributor is always this package's `witness::Witness`, so neither type name
@@ -55,7 +59,7 @@ drop-only package witness after all sale checks and passes it directly to
 `purchase` performs these checks and effects atomically:
 
 1. require the exact bound Pressing;
-2. require the Listing's Release;
+2. require the Pressing's Release;
 3. require enabled state;
 4. require the buyer's complete expected `Pricing` enum to equal the current rule;
 5. validate exact Fixed payment or minimum Floor payment;
@@ -64,13 +68,11 @@ drop-only package witness after all sale checks and passes it directly to
 8. forward the entire Balance with `release_revenue_forwarder::forward`, which
    sends `payment / n` to each track's royalty pool address and the remainder to
    the Release;
-9. emit `RecordSoldEvent<Currency>` with the accepted pricing snapshot, the returned
-   Record's currency, actual price, and purchase timestamp, plus supply and
-   proceeds snapshots;
+9. emit `RecordSoldEvent<Currency>` with the Listing, Record, and accepted pricing;
 10. return the Record for PTB composition.
 
 Move transaction atomicity rolls back the sequence increment, Record derivation,
-fund deposit, and events if any later command aborts.
+payment forwarding, and events if any later command aborts.
 
 ## Immutability
 
@@ -82,7 +84,7 @@ Pressing authorizes the package Witness.
 ## Edition supply
 
 All currencies and distributors share the Pressing lifetime issuance ceiling.
-`RecordSoldEvent.max_supply` is always positive; there is no optional-cap flag or
-zero sentinel. The Pressing enforces exhaustion atomically before payment is sent.
+The Pressing's `max_supply` is always positive; there is no optional cap or zero
+sentinel. The Pressing enforces exhaustion atomically before payment is sent.
 Listing enabled state is independent of sold-out status. Sequential edition
 creation is enforced by Record using the previous derived claim on the Release.

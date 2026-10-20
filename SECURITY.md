@@ -6,16 +6,16 @@
   packing it or by calling its package-visible constructor.
 - A purchase cannot mint unless the bound Pressing currently authorizes that exact
   witness type.
-- A Listing cannot be rebound: Release and Pressing IDs have no setters and are
-  sourced from the Pressing during its derived-object claim.
+- A Listing cannot be rebound: its Pressing ID has no setter and is fixed by the
+  derived-object claim. `purchase` requires the Pressing's own Release.
 - One `(Pressing, Currency)` can claim only one Listing, permanently.
 - Listing creation and updates require the matching `PressingAdminCap`.
 - Fixed listings reject both underpayment and overpayment; Floor listings reject
   underpayment and intentionally keep overpayment.
 - The full expected-Pricing check protects a prepared PTB from amount changes and
   equal-amount changes between Fixed and Floor semantics.
-- All payment is sent to the stored Release ID; no proceeds remain in a Listing or
-  Record Shop-owned object.
+- All payment is forwarded to the Release's tracks' royalty pools; no proceeds
+  remain in a Listing or Record Shop-owned object.
 - Record lineage, numbering, purchase timestamp, Distributor type, and
   maximum supply are enforced by `record`. Currency and price are attestations
   from the authorized Distributor; this Record Shop binds them to the consumed
@@ -39,7 +39,7 @@ reference publicly available and therefore makes its authority public.
 
 The package must be made immutable before its Witness is authorized. Retaining its
 `UpgradeCap` would allow later code to construct the same authorized Witness while
-bypassing Listing payment and state checks.
+bypassing Listing payment and enabled checks.
 
 A Floor price deliberately allows arbitrary overpayment, and the entire amount is
 non-refundable at the contract layer. Frontends should make this behavior explicit.
@@ -55,15 +55,15 @@ forwards it later.
 A Record stores neither its buyer nor its recipient; the event's transaction sender
 is the buyer. The caller must consume the returned Record in the same PTB, normally
 with `transfer::public_transfer`; this permits gifts and composition. `RecordSoldEvent`
-records the accepted Pricing and complete purchase provenance but does not claim a
-final owner.
+records the Listing, Record, and accepted Pricing; purchase provenance is in the
+same transaction's `RecordPurchasedEvent`. Neither claims a final owner.
 
 ## Verification
 
 `make verify` runs success and abort-path unit tests plus two external compile-fail
 fixtures. The end-to-end scenario covers Release → capped Pressing → Witness
 authorization → derived shared Listing → nonzero buyer payment → returned Record →
-buyer ownership → exact Release-owner proceeds withdrawal.
+buyer ownership → proceeds forwarded to the tracks' royalty pools.
 
 Report suspected vulnerabilities privately through this repository's GitHub
 Security Advisory workflow before public disclosure.
