@@ -1,10 +1,10 @@
 [package]
 name = "record_shop"
 edition = "2024"
-license = "Apache-2.0"
+license = "FSL-1.1-ALv2"
 authors = ["Miso Labs, Inc. (build@miso.fm)"]
 
 [dependencies]
 musicos = { git = "https://github.com/misofm/musicos.git", rev = "f68189873e712ee931460cc00404db4f01391a24" }
-record = { git = "https://github.com/misofm/record.git", rev = "d25102e96f92f1d08f41f0c6151b439b9e56f39b" }
+record = { git = "https://github.com/misofm/record.git", rev = "20d16dca71c4a7ebf1a5bd5fa7d1135b83b2fd30" }
 release_revenue_forwarder = { git = "https://github.com/misofm/release-revenue-forwarder.git", rev = "ba469f027511b787fb95887f42da411137046da2" }

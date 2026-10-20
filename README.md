@@ -109,4 +109,8 @@ privacy diagnostics.
 See [architecture](docs/ARCHITECTURE.md) and [security](SECURITY.md) for the
 invariants and trust boundaries.
 
-License: Apache-2.0.
+## License
+
+[Functional Source License 1.1, ALv2 Future License](./LICENSE.md)
+(FSL-1.1-ALv2). Any use except a Competing Use is permitted, and each version
+becomes Apache-2.0 two years after its release.
