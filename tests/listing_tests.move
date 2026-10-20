@@ -992,11 +992,13 @@ fun currencies_share_the_same_supply_cap() {
     pressing.authorize_distributor<Witness>(&cap);
     let mut usd = listing::new<USD>(&mut pressing, &cap, listing::fixed(10));
     let mut eur = listing::new<EUR>(&mut pressing, &cap, listing::fixed(20));
-    let usd_record =
-        purchase_at(&mut usd, &mut pressing, &release, payment(10), listing::fixed(10), 0, &mut ctx);
+    let usd_record = purchase_at(
+        &mut usd, &mut pressing, &release, payment(10), listing::fixed(10), 0, &mut ctx,
+    );
     usd_record.destroy();
-    let eur_record =
-        purchase_at(&mut eur, &mut pressing, &release, payment(20), listing::fixed(20), 1, &mut ctx);
+    let eur_record = purchase_at(
+        &mut eur, &mut pressing, &release, payment(20), listing::fixed(20), 1, &mut ctx,
+    );
     eur_record.destroy();
     destroy(usd);
     destroy(eur);
@@ -1013,8 +1015,9 @@ fun sale_event_preserves_u16_maximum_edition() {
     let (mut pressing, cap) = pressing::new_for_testing(object::id(&release), 65_535, 1, &mut ctx);
     pressing.authorize_distributor<Witness>(&cap);
     let mut listing = listing::new<USD>(&mut pressing, &cap, listing::fixed(10));
-    let record =
-        purchase_at(&mut listing, &mut pressing, &release, payment(10), listing::fixed(10), 0, &mut ctx);
+    let record = purchase_at(
+        &mut listing, &mut pressing, &release, payment(10), listing::fixed(10), 0, &mut ctx,
+    );
     assert_eq!(record.edition(), 65_535);
     let mut events = event::events_by_type<listing::RecordSoldEvent<USD>>();
     assert_record_sale(
