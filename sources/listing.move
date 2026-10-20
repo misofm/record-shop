@@ -14,7 +14,7 @@ use musicos::release::Release;
 use record::{pressing::{Pressing, PressingAdminCap}, record::Record};
 use record_shop::witness;
 use release_revenue_forwarder::release_revenue_forwarder;
-use sui::{balance::Balance, clock::Clock, derived_object, event::emit};
+use sui::{balance::Balance, derived_object, event::emit};
 
 // === Errors ===
 
@@ -112,7 +112,6 @@ public fun purchase<Currency>(
     pressing: &mut Pressing,
     release: &Release,
     payment: Balance<Currency>,
-    clock: &Clock,
 ): Record {
     assert!(object::id(pressing) == self.pressing_id, EWrongPressing);
     assert!(object::id(release) == pressing.release_id(), EWrongRelease);
@@ -123,7 +122,7 @@ public fun purchase<Currency>(
         Pricing::Floor(price) => assert!(paid >= price, EWrongPayment),
     };
 
-    let record = pressing.mint<witness::Witness, Currency>(witness::new(), paid, clock);
+    let record = pressing.mint<witness::Witness, Currency>(witness::new(), paid);
     release_revenue_forwarder::forward(release, payment);
     emit(RecordSoldEvent<Currency> {
         listing_id: object::id(self),

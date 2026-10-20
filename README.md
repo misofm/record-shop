@@ -37,16 +37,11 @@ listing.share();
 ```
 
 Buyers pass the Listing (read only), its mutable Pressing, the Pressing's Release, a
-`Balance<Currency>`, and Sui's Clock. `purchase` returns the Record;
-the PTB must transfer or otherwise consume it.
+and a `Balance<Currency>`. `purchase` returns the Record; the PTB must transfer
+or otherwise consume it.
 
 ```move
-let record = listing.purchase(
-    &mut pressing,
-    &release,
-    payment,
-    clock,
-);
+let record = listing.purchase(&mut pressing, &release, payment);
 transfer::public_transfer(record, recipient);
 ```
 
@@ -56,9 +51,9 @@ transfer::public_transfer(record, recipient);
   charge more: a Fixed price that no longer matches, or a Floor above the
   payment, aborts with `EWrongPayment`.
 - `set_price` and `set_enabled` require the matching `PressingAdminCap`.
-- The returned Record stores the concrete currency type, actual amount paid, and
-  Clock timestamp as immutable purchase provenance. It does not store the buyer;
-  indexers read the buyer as the sale event's transaction sender.
+- The returned Record stores the concrete currency type and actual amount paid as
+  immutable purchase provenance. It does not store the buyer or the time; indexers
+  read them as the sale event's transaction sender and timestamp.
 
 All proceeds go straight to the royalty pools of the Release's tracks through
 [`release_revenue_forwarder`](https://github.com/misofm/release-revenue-forwarder):

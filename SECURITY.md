@@ -17,10 +17,9 @@
   payment from `price()` at execution time accepts the current price.
 - All payment is forwarded to the Release's tracks' royalty pools; no proceeds
   remain in a Listing or Record Shop-owned object.
-- Record lineage, numbering, purchase timestamp, Distributor type, and
-  maximum supply are enforced by `record`. Currency and price are attestations
-  from the authorized Distributor; this Record Shop binds them to the consumed
-  `Balance<Currency>`.
+- Record lineage, numbering, Distributor type, and maximum supply are enforced
+  by `record`. Currency and price are attestations from the authorized
+  Distributor; this Record Shop binds them to the consumed `Balance<Currency>`.
 
 - Every Pressing has a positive immutable lifetime supply ceiling shared across
   currencies and distributors. Burns and distributor changes cannot replenish it.
