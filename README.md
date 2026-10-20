@@ -97,7 +97,7 @@ with the Record, Pressing, number and amount paid.
 
 ## Verify
 
-Requires Sui CLI 1.78 or a compatible toolchain:
+Requires Sui CLI 1.82.1 or a compatible toolchain:
 
 ```bash
 make verify
