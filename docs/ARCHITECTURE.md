@@ -31,16 +31,13 @@ Events are currency-typed and carry only facts that cannot be derived:
 | `ListingCreatedEvent<Currency>` | `listing_id`, `pressing_id`, `pricing` |
 | `ListingPriceChangedEvent<Currency>` | `listing_id`, `pricing` |
 | `ListingEnabledChangedEvent<Currency>` | `listing_id`, `enabled` |
-| `RecordSoldEvent<Currency>` | `listing_id`, `record_id`, `pricing` |
 
 A Listing starts enabled. Sharing is silent, and no-op updates emit nothing.
-`RecordSoldEvent` is emitted after the mint and payment forwarding; the amount
-paid, number, and Pressing are in the same transaction's `RecordPurchasedEvent`,
-and the Release and edition join from `PressingCreatedEvent`.
-
-The sale event's phantom `Currency` parameter identifies the payment currency.
-The distributor is always this package's `witness::Witness`, so neither type name
-is duplicated in the event payload.
+A sale emits no event of its own: `pressing::mint` emits
+`RecordPurchasedEvent<witness::Witness, Currency>` with the Record, Pressing,
+number, and amount paid. Its type names the distributor and currency, the Listing
+derives from the Pressing and currency, the Listing's pricing follows from its
+own events, and the Release and edition join from `PressingCreatedEvent`.
 
 ## Authority
 
@@ -65,8 +62,7 @@ drop-only package witness after all sale checks and passes it directly to
 6. forward the entire Balance with `release_revenue_forwarder::forward`, which
    sends `payment / n` to each track's royalty pool address and the remainder to
    the Release;
-7. emit `RecordSoldEvent<Currency>` with the Listing, Record, and accepted pricing;
-8. return the Record for PTB composition.
+7. return the Record for PTB composition.
 
 Move transaction atomicity rolls back the sequence increment, Record derivation,
 payment forwarding, and events if any later command aborts.

@@ -64,13 +64,6 @@ public struct ListingEnabledChangedEvent<phantom Currency> has copy, drop {
     enabled: bool,
 }
 
-/// The amount paid is in the same transaction's `RecordPurchasedEvent`.
-public struct RecordSoldEvent<phantom Currency> has copy, drop {
-    listing_id: ID,
-    record_id: ID,
-    pricing: Pricing,
-}
-
 // === Public Functions ===
 
 public fun fixed(price: u64): Pricing {
@@ -124,11 +117,6 @@ public fun purchase<Currency>(
 
     let record = pressing.mint<witness::Witness, Currency>(witness::new(), paid);
     release_revenue_forwarder::forward(release, payment);
-    emit(RecordSoldEvent<Currency> {
-        listing_id: object::id(self),
-        record_id: object::id(&record),
-        pricing: self.pricing,
-    });
     record
 }
 
@@ -216,9 +204,4 @@ public fun enabled_changed_event_fields<Currency>(
     event: &ListingEnabledChangedEvent<Currency>,
 ): (ID, bool) {
     (event.listing_id, event.enabled)
-}
-
-#[test_only]
-public fun sold_event_fields<Currency>(event: &RecordSoldEvent<Currency>): (ID, ID, Pricing) {
-    (event.listing_id, event.record_id, event.pricing)
 }

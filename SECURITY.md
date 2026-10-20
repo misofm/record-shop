@@ -54,9 +54,8 @@ forwards it later.
 
 A Record stores neither its buyer nor its recipient; the event's transaction sender
 is the buyer. The caller must consume the returned Record in the same PTB, normally
-with `transfer::public_transfer`; this permits gifts and composition. `RecordSoldEvent`
-records the Listing, Record, and accepted Pricing; purchase provenance is in the
-same transaction's `RecordPurchasedEvent`. Neither claims a final owner.
+with `transfer::public_transfer`; this permits gifts and composition. Purchase
+provenance is in the sale's `RecordPurchasedEvent`, which claims no final owner.
 
 ## Verification
 

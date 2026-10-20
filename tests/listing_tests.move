@@ -53,8 +53,8 @@ fun payment<Currency>(value: u64): Balance<Currency> {
     balance::create_for_testing(value)
 }
 
-fun assert_record_purchase(
-    purchased: &pressing::RecordPurchasedEvent<Witness, USD>,
+fun assert_record_purchase<Currency>(
+    purchased: &pressing::RecordPurchasedEvent<Witness, Currency>,
     record_id: ID,
     pressing_id: ID,
     number: u32,
@@ -66,18 +66,6 @@ fun assert_record_purchase(
     assert_eq!(event_pressing_id, pressing_id);
     assert_eq!(event_number, number);
     assert_eq!(event_purchase_price, purchase_price);
-}
-
-fun assert_record_sale<Currency>(
-    sold: &listing::RecordSoldEvent<Currency>,
-    listing_id: ID,
-    record_id: ID,
-    pricing: listing::Pricing,
-) {
-    let (event_listing_id, event_record_id, event_pricing) = listing::sold_event_fields(sold);
-    assert_eq!(event_listing_id, listing_id);
-    assert_eq!(event_record_id, record_id);
-    assert_eq!(event_pricing, pricing);
 }
 
 #[test]
@@ -128,10 +116,6 @@ fun complete_sale_delivers_record_and_forwards_proceeds_to_the_tracks() {
     assert_eq!(purchased.length(), 1);
     assert_record_purchase(&purchased[0], record_id, pressing_id, 1, price);
 
-    let sold = event::events_by_type<listing::RecordSoldEvent<USD>>();
-    assert_eq!(sold.length(), 1);
-    assert_record_sale(&sold[0], listing_id, record_id, listing::fixed(price));
-
     ts::return_shared(listing);
     ts::return_shared(pressing);
     ts::return_shared(release);
@@ -178,16 +162,14 @@ fun two_currencies_have_distinct_listings_and_share_one_pressing_sequence() {
     assert_eq!(object::id_address(&first), record::derive_address(pressing_id, 1));
     assert_eq!(object::id_address(&second), record::derive_address(pressing_id, 2));
 
-    let usd_sold = event::events_by_type<listing::RecordSoldEvent<USD>>();
-    let eur_sold = event::events_by_type<listing::RecordSoldEvent<EUR>>();
-    assert_eq!(usd_sold.length(), 1);
-    assert_eq!(eur_sold.length(), 1);
-    assert_record_sale(&usd_sold[0], object::id(&usd), object::id(&first), listing::fixed(5));
-    assert_record_sale(&eur_sold[0], object::id(&eur), object::id(&second), listing::floor(7));
+    // Each sale's event is typed by its currency; with the Pressing it derives
+    // the Listing.
+    let usd_purchased = event::events_by_type<pressing::RecordPurchasedEvent<Witness, USD>>();
     let eur_purchased = event::events_by_type<pressing::RecordPurchasedEvent<Witness, EUR>>();
-    let (_, _, number, paid) = pressing::purchased_event_fields(&eur_purchased[0]);
-    assert_eq!(number, 2);
-    assert_eq!(paid, 9);
+    assert_eq!(usd_purchased.length(), 1);
+    assert_eq!(eur_purchased.length(), 1);
+    assert_record_purchase(&usd_purchased[0], object::id(&first), pressing_id, 1, 5);
+    assert_record_purchase(&eur_purchased[0], object::id(&second), pressing_id, 2, 9);
 
     // Each payment is split across the two tracks in its own currency.
     assert_eq!(forwarded<USD>(), vector[4]);
@@ -615,8 +597,8 @@ fun sale_supports_the_u16_maximum_edition() {
     let mut listing = listing::new<USD>(&mut pressing, &cap, listing::fixed(10));
     let record = listing.purchase(&mut pressing, &release, payment(10));
     assert_eq!(record.edition(), 65_535);
-    let events = event::events_by_type<listing::RecordSoldEvent<USD>>();
-    assert_record_sale(&events[0], object::id(&listing), object::id(&record), listing::fixed(10));
+    let events = event::events_by_type<pressing::RecordPurchasedEvent<Witness, USD>>();
+    assert_record_purchase(&events[0], object::id(&record), object::id(&pressing), 1, 10);
     record.destroy();
     destroy(listing);
     destroy(pressing);

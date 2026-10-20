@@ -88,11 +88,12 @@ that the capability is gone, and only then authorize
 | `ListingCreatedEvent<Currency>` | `listing_id`, `pressing_id`, `pricing` |
 | `ListingPriceChangedEvent<Currency>` | `listing_id`, `pricing` |
 | `ListingEnabledChangedEvent<Currency>` | `listing_id`, `enabled` |
-| `RecordSoldEvent<Currency>` | `listing_id`, `record_id`, `pricing` |
 
 `pricing` is the `Pricing` enum value. Sharing is silent and no-op updates emit
-nothing; changes made before sharing still emit. The amount paid and Record
-number are in the same transaction's `record::pressing::RecordPurchasedEvent`.
+nothing; changes made before sharing still emit. A sale emits only
+`record::pressing::RecordPurchasedEvent<record_shop::witness::Witness, Currency>`
+with the Record, Pressing, number and amount paid; the Listing is
+`listing::derive_address<Currency>(pressing_id)`.
 
 ## Verify
 
