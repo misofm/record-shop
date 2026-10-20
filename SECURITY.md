@@ -4,7 +4,7 @@
 
 - External packages cannot construct `record_shop::witness::Witness` by
   packing it or by calling its package-visible constructor.
-- A purchase cannot mint unless the bound Pressing currently authorizes that exact
+- A purchase cannot press a Record unless the bound Pressing currently authorizes that exact
   witness type.
 - A Listing cannot be rebound: its Pressing ID has no setter and is fixed by the
   derived-object claim. `purchase` requires the Pressing's own Release.
@@ -30,7 +30,7 @@
 
 The holder of a `PressingAdminCap` can reprice, disable, or enable its Listing and
 can authorize or revoke Distributor types on the Pressing. Secure capability
-custody is therefore required. Revocation immediately stops new Record Shop mints,
+custody is therefore required. Revocation immediately stops new Record Shop presses,
 but does not affect Records already sold.
 
 `PressingAdminCap` and `ReleaseAdminCap` must remain address-owned or wrapped in

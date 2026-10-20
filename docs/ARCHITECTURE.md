@@ -19,7 +19,7 @@ listing::derive_address<Currency>(pressing_id)
 
 Listings are returned address-owned by `new` and shared only by the separate
 `share` function. This permits atomic setup before public access. Purchases only
-read the Listing, so concurrent sales don't write it. Every mint mutates the bound
+read the Listing, so concurrent sales don't write it. Every press mutates the bound
 Pressing because the Pressing owns the edition-local sequence and supply cap.
 
 ## Events
@@ -33,7 +33,7 @@ Events are currency-typed and carry only facts that cannot be derived:
 | `ListingEnabledChangedEvent<Currency>` | `listing_id`, `enabled` |
 
 A Listing starts enabled. Sharing is silent, and no-op updates emit nothing.
-A sale emits no event of its own: `pressing::mint` emits
+A sale emits no event of its own: `pressing::press` emits
 `RecordPurchasedEvent<witness::Witness, Currency>` with the Record, Pressing,
 number, and amount paid. Its type names the distributor and currency, the Listing
 derives from the Pressing and currency, the Listing's pricing follows from its
@@ -45,10 +45,10 @@ own events, and the Release and edition join from `PressingCreatedEvent`.
 the Pressing's cap-gated `uid_mut`; updates compare the capability's bound Pressing
 ID to the Listing's stored Pressing ID.
 
-The Record Shop does not hold mint authority as an object. A Pressing instead
+The Record Shop does not hold press authority as an object. A Pressing instead
 authorizes the type `record_shop::witness::Witness`. `purchase` creates the
 drop-only package witness after all sale checks and passes it directly to
-`pressing::mint`.
+`pressing::press`.
 
 ## Purchase ordering
 
@@ -58,7 +58,7 @@ drop-only package witness after all sale checks and passes it directly to
 2. require the Pressing's Release;
 3. require enabled state;
 4. validate exact Fixed payment or minimum Floor payment;
-5. mint the next Record through the authorized witness;
+5. press the next Record through the authorized witness;
 6. forward the entire Balance with `release_revenue_forwarder::forward`, which
    sends `payment / n` to each track's royalty pool address and the remainder to
    the Release;

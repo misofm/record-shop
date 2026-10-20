@@ -4,7 +4,7 @@
 /// A fixed- or floor-price Record Shop listing for one Pressing and currency.
 ///
 /// Each `Listing<Currency>` derives from its Pressing at `ListingKey<Currency>()`;
-/// there is no Record Shop singleton. `purchase` mints through the Pressing with
+/// there is no Record Shop singleton. `purchase` presses through the Pressing with
 /// `witness::Witness` and forwards the whole payment to the Release's tracks.
 module record_shop::listing;
 
@@ -97,7 +97,7 @@ public fun share<Currency>(self: Listing<Currency>) {
     transfer::share_object(self);
 }
 
-/// Mints the next Record and forwards the whole payment, including any Floor
+/// Presses the next Record and forwards the whole payment, including any Floor
 /// overpayment, to the Release's tracks' royalty pools. Reads the Listing only,
 /// so sales don't write it. The caller transfers or composes the Record.
 public fun purchase<Currency>(
@@ -115,7 +115,7 @@ public fun purchase<Currency>(
         Pricing::Floor(price) => assert!(paid >= price, EWrongPayment),
     };
 
-    let record = pressing.mint<witness::Witness, Currency>(witness::new(), paid);
+    let record = pressing.press<witness::Witness, Currency>(witness::new(), paid);
     release_revenue_forwarder::forward(release, payment);
     record
 }

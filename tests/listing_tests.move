@@ -326,7 +326,7 @@ fun price_events_distinguish_pricing_variants_and_amount_changes() {
     abort_code = pressing::EDistributorNotAuthorized,
     location = pressing,
 )]
-fun unauthorized_record_shop_cannot_mint() {
+fun unauthorized_record_shop_cannot_press() {
     let mut ctx = tx_context::dummy();
     let (release, release_cap) = a_release(&mut ctx);
     let (mut pressing, cap) = a_pressing(object::id(&release), 100, &mut ctx);
@@ -344,7 +344,7 @@ fun unauthorized_record_shop_cannot_mint() {
     abort_code = pressing::EDistributorNotAuthorized,
     location = pressing,
 )]
-fun revoked_record_shop_cannot_mint() {
+fun revoked_record_shop_cannot_press() {
     let mut ctx = tx_context::dummy();
     let (release, release_cap) = a_release(&mut ctx);
     let (mut pressing, cap) = a_pressing(object::id(&release), 100, &mut ctx);

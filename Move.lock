@@ -35,7 +35,7 @@ manifest_digest = "5DC482DC9F394BF7554D1A81A0323385F8D41AD029EF4A4D06F1AC5EC0814
 deps = { composition_share = "composition_share", recording_share = "recording_share", share = "share", std = "MoveStdlib", sui = "Sui" }
 
 [pinned.mainnet.record]
-source = { git = "https://github.com/misofm/record.git", subdir = ".", rev = "6a20a7245db2a1252c8b43795923098e1d670b3d" }
+source = { git = "https://github.com/misofm/record.git", subdir = ".", rev = "0893d579a9576bb358ba50c6649223a67284c000" }
 use_environment = "mainnet"
 manifest_digest = "E3D6728E9D0694E6A078D8E4EF7E205B71FF9818F91A48C0146C9F2FEEC0590C"
 deps = { musicos = "musicos", std = "MoveStdlib", sui = "Sui" }
@@ -43,7 +43,7 @@ deps = { musicos = "musicos", std = "MoveStdlib", sui = "Sui" }
 [pinned.mainnet.record_shop]
 source = { root = true }
 use_environment = "mainnet"
-manifest_digest = "7282238A7A4A762D7C0B16F9252109803AC1D072B65AAAEE7497091A8B03DFA0"
+manifest_digest = "D7EF5176A5EFD923194BD92662C8B600C4DC5B5347D3BBB93CED43B3BAA71236"
 deps = { musicos = "musicos", record = "record", release_revenue_forwarder = "release_revenue_forwarder", std = "MoveStdlib", sui = "Sui" }
 
 [pinned.mainnet.recording_share]
@@ -107,7 +107,7 @@ manifest_digest = "CC45D998908E9689559C0D860BD1B3A07385E40FF8A57D4F49CDC1082985A
 deps = { composition_share = "composition_share", recording_share = "recording_share", share = "share", std = "MoveStdlib", sui = "Sui" }
 
 [pinned.testnet.record]
-source = { git = "https://github.com/misofm/record.git", subdir = ".", rev = "6a20a7245db2a1252c8b43795923098e1d670b3d" }
+source = { git = "https://github.com/misofm/record.git", subdir = ".", rev = "0893d579a9576bb358ba50c6649223a67284c000" }
 use_environment = "testnet"
 manifest_digest = "C3A3FB3446CF37D5CDDCB98DD4D60B93C613A35564B5B5C7DA4B4567D52AD833"
 deps = { musicos = "musicos", std = "MoveStdlib", sui = "Sui" }
@@ -115,7 +115,7 @@ deps = { musicos = "musicos", std = "MoveStdlib", sui = "Sui" }
 [pinned.testnet.record_shop]
 source = { root = true }
 use_environment = "testnet"
-manifest_digest = "17CCCE7EED7A5233700382EBD9813C565978CE82E864276949B08B95A383BED9"
+manifest_digest = "1DF9287F3F0CE0EDCA227E5D782A6E259730CB78465F57FD54F84F8EFE972A12"
 deps = { musicos = "musicos", record = "record", release_revenue_forwarder = "release_revenue_forwarder", std = "MoveStdlib", sui = "Sui" }
 
 [pinned.testnet.recording_share]
