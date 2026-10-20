@@ -7,4 +7,4 @@ authors = ["Miso Labs, Inc. (build@miso.fm)"]
 [dependencies]
 musicos = { git = "https://github.com/misofm/musicos.git", rev = "f68189873e712ee931460cc00404db4f01391a24" }
 record = { git = "https://github.com/misofm/record.git", rev = "87b5e97f1bf81e91d965dbdc98e37900c4b489da" }
-release_revenue_forwarder = { git = "https://github.com/misofm/release-revenue-forwarder.git", rev = "94eeb4ba15687976043665c602de1414a8527d8a" }
+release_revenue_forwarder = { git = "https://github.com/misofm/release-revenue-forwarder.git", rev = "ba469f027511b787fb95887f42da411137046da2" }
