@@ -36,8 +36,8 @@ pressing.share();
 listing.share();
 ```
 
-Buyers pass a mutable Listing, its mutable Pressing, the Pressing's Release, a
-`Balance<Currency>`, their expected current pricing rule, and Sui's Clock. `purchase` returns the Record;
+Buyers pass the Listing (read only), its mutable Pressing, the Pressing's Release, a
+`Balance<Currency>`, and Sui's Clock. `purchase` returns the Record;
 the PTB must transfer or otherwise consume it.
 
 ```move
@@ -45,7 +45,6 @@ let record = listing.purchase(
     &mut pressing,
     &release,
     payment,
-    expected_pricing,
     clock,
 );
 transfer::public_transfer(record, recipient);
@@ -53,12 +52,10 @@ transfer::public_transfer(record, recipient);
 
 - `fixed(price)` accepts exactly `price`.
 - `floor(price)` accepts at least `price` and forwards the entire payment.
-- `expected_pricing` compares the complete pricing rule, so a stale amount or a
-  same-amount change between Fixed and Floor aborts instead of silently accepting
-  new terms.
+- The payment amount is fixed when the buyer signs, so a repricing can't
+  charge more: a Fixed price that no longer matches, or a Floor above the
+  payment, aborts with `EWrongPayment`.
 - `set_price` and `set_enabled` require the matching `PressingAdminCap`.
-- `total_proceeds` reports the gross sum of actual payments from completed sales,
-  including any Floor overpayment.
 - The returned Record stores the concrete currency type, actual amount paid, and
   Clock timestamp as immutable purchase provenance. It does not store the buyer;
   indexers read the buyer as the sale event's transaction sender.

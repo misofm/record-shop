@@ -22,9 +22,8 @@ const EUnauthorized: u64 = 0;
 const EInvalidPrice: u64 = 1;
 const EDisabled: u64 = 2;
 const EWrongPressing: u64 = 3;
-const EPriceChanged: u64 = 4;
-const EWrongPayment: u64 = 5;
-const EWrongRelease: u64 = 6;
+const EWrongPayment: u64 = 4;
+const EWrongRelease: u64 = 5;
 
 // === Structs ===
 
@@ -34,8 +33,6 @@ public struct Listing<phantom Currency> has key {
     pressing_id: ID,
     pricing: Pricing,
     enabled: bool,
-    /// Gross payments across completed sales.
-    total_proceeds: u128,
 }
 
 public struct ListingKey<phantom Currency>() has copy, drop, store;
@@ -98,7 +95,6 @@ public fun new<Currency>(
         pressing_id,
         pricing,
         enabled: true,
-        total_proceeds: 0,
     };
     emit(ListingCreatedEvent<Currency> { listing_id: object::id(&listing), pressing_id, pricing });
     listing
@@ -109,20 +105,18 @@ public fun share<Currency>(self: Listing<Currency>) {
 }
 
 /// Mints the next Record and forwards the whole payment, including any Floor
-/// overpayment, to the Release's tracks' royalty pools. `expected_pricing` must
-/// equal the current rule exactly. The caller transfers or composes the Record.
+/// overpayment, to the Release's tracks' royalty pools. Reads the Listing only,
+/// so sales don't write it. The caller transfers or composes the Record.
 public fun purchase<Currency>(
-    self: &mut Listing<Currency>,
+    self: &Listing<Currency>,
     pressing: &mut Pressing,
     release: &Release,
     payment: Balance<Currency>,
-    expected_pricing: Pricing,
     clock: &Clock,
 ): Record {
     assert!(object::id(pressing) == self.pressing_id, EWrongPressing);
     assert!(object::id(release) == pressing.release_id(), EWrongRelease);
     assert!(self.enabled, EDisabled);
-    assert!(expected_pricing == self.pricing, EPriceChanged);
     let paid = payment.value();
     match (self.pricing) {
         Pricing::Fixed(price) => assert!(paid == price, EWrongPayment),
@@ -130,7 +124,6 @@ public fun purchase<Currency>(
     };
 
     let record = pressing.mint<witness::Witness, Currency>(witness::new(), paid, clock);
-    self.total_proceeds = self.total_proceeds + (paid as u128);
     release_revenue_forwarder::forward(release, payment);
     emit(RecordSoldEvent<Currency> {
         listing_id: object::id(self),
@@ -157,10 +150,6 @@ public fun price<Currency>(self: &Listing<Currency>): u64 {
 
 public fun is_enabled<Currency>(self: &Listing<Currency>): bool {
     self.enabled
-}
-
-public fun total_proceeds<Currency>(self: &Listing<Currency>): u128 {
-    self.total_proceeds
 }
 
 /// The address of the one Listing for `(pressing_id, Currency)`.

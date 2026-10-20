@@ -6,8 +6,7 @@
 
 - the exact Pressing ID;
 - `Pricing::Fixed(u64)` or `Pricing::Floor(u64)`;
-- `enabled: bool`;
-- total gross proceeds in the Listing's currency.
+- `enabled: bool`.
 
 The Release is not stored; `purchase` checks it against the Pressing's `release_id`.
 
@@ -19,8 +18,8 @@ listing::derive_address<Currency>(pressing_id)
 ```
 
 Listings are returned address-owned by `new` and shared only by the separate
-`share` function. This permits atomic setup before public access. Purchases mutate
-the Listing to accumulate its total gross proceeds. Every mint also mutates the bound
+`share` function. This permits atomic setup before public access. Purchases only
+read the Listing, so concurrent sales don't write it. Every mint mutates the bound
 Pressing because the Pressing owns the edition-local sequence and supply cap.
 
 ## Events
@@ -61,15 +60,13 @@ drop-only package witness after all sale checks and passes it directly to
 1. require the exact bound Pressing;
 2. require the Pressing's Release;
 3. require enabled state;
-4. require the buyer's complete expected `Pricing` enum to equal the current rule;
-5. validate exact Fixed payment or minimum Floor payment;
-6. mint the next Record through the authorized witness;
-7. add the actual payment to the Listing's total proceeds;
-8. forward the entire Balance with `release_revenue_forwarder::forward`, which
+4. validate exact Fixed payment or minimum Floor payment;
+5. mint the next Record through the authorized witness;
+6. forward the entire Balance with `release_revenue_forwarder::forward`, which
    sends `payment / n` to each track's royalty pool address and the remainder to
    the Release;
-9. emit `RecordSoldEvent<Currency>` with the Listing, Record, and accepted pricing;
-10. return the Record for PTB composition.
+7. emit `RecordSoldEvent<Currency>` with the Listing, Record, and accepted pricing;
+8. return the Record for PTB composition.
 
 Move transaction atomicity rolls back the sequence increment, Record derivation,
 payment forwarding, and events if any later command aborts.

@@ -12,8 +12,9 @@
 - Listing creation and updates require the matching `PressingAdminCap`.
 - Fixed listings reject both underpayment and overpayment; Floor listings reject
   underpayment and intentionally keep overpayment.
-- The full expected-Pricing check protects a prepared PTB from amount changes and
-  equal-amount changes between Fixed and Floor semantics.
+- The buyer's payment amount is fixed in the signed transaction, so a repricing
+  can only make the purchase abort, never charge more. A PTB that sizes its
+  payment from `price()` at execution time accepts the current price.
 - All payment is forwarded to the Release's tracks' royalty pools; no proceeds
   remain in a Listing or Record Shop-owned object.
 - Record lineage, numbering, purchase timestamp, Distributor type, and
