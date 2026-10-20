@@ -2,26 +2,20 @@
 
 ## State and identity
 
-`Listing<phantom Currency>` is a key-only object. Its stored fields are:
+The Record Shop's only state is a `Pricing` dynamic field on each Pressing, one
+per currency, at `PricingKey<Currency>()`:
 
-- the exact Pressing ID;
 - `Pricing::Fixed(u64)` or `Pricing::Floor(u64)`, where a price of 0 is free or
-  pay what you want;
-- `enabled: bool`.
+  pay what you want.
 
-The Release is not stored; `purchase` checks it against the Pressing's `release_id`.
+Holding a pricing is what puts the Pressing on sale in that currency; removing it
+stops sales. There is no listing object, enabled flag or stored Pressing ID: the
+pricing lives on the Pressing it prices. The Release is not stored; `purchase`
+checks it against the Pressing's `release_id`.
 
-The module-private constructor for `ListingKey<Currency>()` is claimed from the
-Pressing UID. This gives a deterministic, claim-once ID without a registry:
-
-```move
-listing::derive_address<Currency>(pressing_id)
-```
-
-Listings are returned address-owned by `new` and shared only by the separate
-`share` function. This permits atomic setup before public access. Purchases only
-read the Listing, so concurrent sales don't write it. Every press mutates the bound
-Pressing because the Pressing owns the edition-local sequence and supply cap.
+A purchase reads the pricing from the Pressing it already mutates, so a sale takes
+no shared input besides the Pressing and the Release. Every press mutates the
+Pressing because it owns the edition-local sequence and supply cap.
 
 ## Events
 
@@ -29,22 +23,19 @@ Events are currency-typed and carry only facts that cannot be derived:
 
 | Event | Fields |
 |---|---|
-| `ListingCreatedEvent<Currency>` | `listing_id`, `pressing_id`, `pricing` |
-| `ListingPriceChangedEvent<Currency>` | `listing_id`, `pricing` |
-| `ListingEnabledChangedEvent<Currency>` | `listing_id`, `enabled` |
+| `PricingSetEvent<Currency>` | `pressing_id`, `pricing` |
+| `PricingRemovedEvent<Currency>` | `pressing_id` |
 
-A Listing starts enabled. Sharing is silent, and no-op updates emit nothing.
-A sale emits no event of its own: `pressing::press` emits
-`RecordPurchasedEvent<witness::Witness, Currency>` with the Record, Pressing,
-number, and amount paid. Its type names the distributor and currency, the Listing
-derives from the Pressing and currency, the Listing's pricing follows from its
-own events, and the Release and edition join from `PressingCreatedEvent`.
+No-op updates emit nothing. A sale emits no event of its own: `pressing::press`
+emits `RecordPurchasedEvent<witness::Witness, Currency>` with the Record,
+Pressing, number, and amount paid. Its type names the distributor and currency,
+the pricing follows from the pricing events, and the Release and edition join
+from `PressingCreatedEvent`.
 
 ## Authority
 
-`PressingAdminCap` is the only Listing administration capability. Creation calls
-the Pressing's cap-gated `uid_mut`; updates compare the capability's bound Pressing
-ID to the Listing's stored Pressing ID.
+`PressingAdminCap` is the only pricing capability: `set_pricing` and
+`remove_pricing` go through the Pressing's cap-gated `uid_mut`.
 
 The Record Shop does not hold press authority as an object. A Pressing instead
 authorizes the type `record_shop::witness::Witness`. `purchase` creates the
@@ -55,15 +46,15 @@ drop-only package witness after all sale checks and passes it directly to
 
 `purchase` performs these checks and effects atomically:
 
-1. require the exact bound Pressing;
-2. require the Pressing's Release;
-3. require enabled state;
-4. validate exact Fixed payment or minimum Floor payment;
-5. press the next Record through the authorized witness;
-6. forward the entire Balance with `release_revenue_forwarder::forward`, which
+1. require the Pressing's Release;
+2. read the Pressing's `Currency` pricing, aborting if there is none;
+3. validate exact Fixed payment or minimum Floor payment;
+4. press the next Record through the authorized witness, stamped with the
+   `Clock` time;
+5. forward the entire Balance with `release_revenue_forwarder::forward`, which
    sends `payment / n` to each track's royalty pool address and the remainder to
    the Release;
-7. return the Record for PTB composition.
+6. return the Record for PTB composition.
 
 Move transaction atomicity rolls back the sequence increment, Record derivation,
 payment forwarding, and events if any later command aborts.
@@ -71,7 +62,7 @@ payment forwarding, and events if any later command aborts.
 ## Immutability
 
 The package is intended to be made immutable when published. Future Record Shop
-designs ship as separate packages with explicit migration paths, so Listings do
+designs ship as separate packages with explicit migration paths, so pricings do
 not carry package-upgrade versions. Its `UpgradeCap` must be consumed before any
 Pressing authorizes the package Witness.
 
@@ -80,5 +71,6 @@ Pressing authorizes the package Witness.
 All currencies and distributors share the Pressing lifetime issuance ceiling.
 The Pressing's `max_supply` is always positive; there is no optional cap or zero
 sentinel. The Pressing enforces exhaustion atomically before payment is sent.
-Listing enabled state is independent of sold-out status. Sequential edition
-creation is enforced by Record using the previous derived claim on the Release.
+Whether a Pressing is priced is independent of sold-out status. Sequential
+edition creation is enforced by Record using the previous derived claim on the
+Release.

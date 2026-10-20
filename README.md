@@ -1,47 +1,43 @@
 # miso-record-shop
 
 `record_shop` is the first-party fixed/floor-price sales package for Miso
-Records on Sui. A `Listing<Currency>` is the complete Record Shop state. There is
-no global Record Shop or Distributor object.
+Records on Sui. Its only state is a `Pricing` stored on each Pressing per
+currency. There is no global Record Shop, Distributor or listing object.
 
 ```text
 Release
 └── PressingKey(edition) → Pressing
     ├── RecordKey(number) → Record
-    └── ListingKey<Currency>() → Listing<Currency>
+    └── PricingKey<Currency>() → Pricing   (dynamic field)
 ```
 
-Each Listing is permanently bound to one Pressing, one Release, and one currency.
-It derives directly from the Pressing, so the same currency cannot be listed twice
-for one Pressing. Different currencies receive different Listing IDs, but consume the same mandatory,
-immutable Pressing supply cap. Destruction does not replenish this lifetime cap.
-An enabled Listing is sold out when its Pressing reaches the cap.
-Editions are `u16` values created sequentially from 1 by the Record package.
+A Pressing is on sale in `Currency` while it holds a `Pricing` under
+`PricingKey<Currency>()`. Each currency has its own pricing, and all of them
+consume the same mandatory, immutable Pressing supply cap. Destruction does not
+replenish this lifetime cap. Editions are `u16` values created sequentially from
+1 by the Record package.
 
 ## Sale flow
 
 The release administrator creates a Pressing, authorizes the exact witness type,
-creates a Listing, and shares the two independently:
+prices it in one or more currencies, and shares it:
 
 ```move
 pressing.authorize_distributor<record_shop::witness::Witness>(&pressing_cap);
-
-let listing = record_shop::listing::new<SUI>(
+record_shop::shop::set_pricing<SUI>(
     &mut pressing,
     &pressing_cap,
-    record_shop::listing::fixed(1_000_000_000),
+    record_shop::shop::fixed(1_000_000_000),
 );
-
 pressing.share();
-listing.share();
 ```
 
-Buyers pass the Listing (read only), its mutable Pressing, the Pressing's Release, a
-and a `Balance<Currency>`. `purchase` returns the Record; the PTB must transfer
-or otherwise consume it.
+Buyers pass the mutable Pressing, its Release, a `Balance<Currency>` and the
+`Clock`. `purchase` returns the Record; the PTB must transfer or otherwise
+consume it.
 
 ```move
-let record = listing.purchase(&mut pressing, &release, payment);
+let record = record_shop::shop::purchase(&mut pressing, &release, payment, &clock);
 transfer::public_transfer(record, recipient);
 ```
 
@@ -49,15 +45,18 @@ transfer::public_transfer(record, recipient);
   `Balance`.
 - `floor(price)` accepts at least `price` and forwards the entire payment;
   `floor(0)` is pay what you want.
-- A free Record stores the Listing's currency and a price of 0. A zero payment
+- A free Record stores the pricing's currency and a price of 0. A zero payment
   forwards nothing.
 - The payment amount is fixed when the buyer signs, so a repricing can't
   charge more: a Fixed price that no longer matches, or a Floor above the
   payment, aborts with `EWrongPayment`.
-- `set_price` and `set_enabled` require the matching `PressingAdminCap`.
-- The returned Record stores the concrete currency type and actual amount paid as
-  immutable purchase provenance. It does not store the buyer or the time; indexers
-  read them as the sale event's transaction sender and timestamp.
+- A currency the Pressing is not on sale in aborts in `sui::dynamic_field`.
+- `set_pricing` (add or reprice) and `remove_pricing` (stop selling) require the
+  Pressing's `PressingAdminCap`. `pricing<Currency>` returns the current
+  pricing, if any.
+- The returned Record stores the concrete currency type, actual amount paid and
+  purchase time as immutable provenance. It does not store the buyer; indexers
+  read it as the sale event's transaction sender.
 
 All proceeds go straight to the royalty pools of the Release's tracks through
 [`release_revenue_forwarder`](https://github.com/misofm/release-revenue-forwarder):
@@ -74,7 +73,7 @@ record_shop::witness::Witness
 ```
 
 `Witness` has only `drop`; its constructor is `public(package)`. Production code
-constructs and immediately consumes it only inside `listing::purchase`. The privacy
+constructs and immediately consumes it only inside `shop::purchase`. The privacy
 fixtures prove that an external package can neither pack `Witness()` nor call
 `witness::new()`.
 
@@ -89,15 +88,12 @@ that the capability is gone, and only then authorize
 
 | Event | Fields |
 |---|---|
-| `ListingCreatedEvent<Currency>` | `listing_id`, `pressing_id`, `pricing` |
-| `ListingPriceChangedEvent<Currency>` | `listing_id`, `pricing` |
-| `ListingEnabledChangedEvent<Currency>` | `listing_id`, `enabled` |
+| `PricingSetEvent<Currency>` | `pressing_id`, `pricing` |
+| `PricingRemovedEvent<Currency>` | `pressing_id` |
 
-`pricing` is the `Pricing` enum value. Sharing is silent and no-op updates emit
-nothing; changes made before sharing still emit. A sale emits only
-`record::pressing::RecordPurchasedEvent<record_shop::witness::Witness, Currency>`
-with the Record, Pressing, number and amount paid; the Listing is
-`listing::derive_address<Currency>(pressing_id)`.
+`pricing` is the `Pricing` enum value. No-op updates emit nothing. A sale emits
+only `record::pressing::RecordPurchasedEvent<record_shop::witness::Witness, Currency>`
+with the Record, Pressing, number and amount paid.
 
 ## Verify
 

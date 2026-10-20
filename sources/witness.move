@@ -11,7 +11,7 @@ module record_shop::witness;
 public struct Witness() has drop;
 
 /// Construct Record Shop press authority. Production code consumes it
-/// immediately in `listing::purchase` and never exposes it to callers.
+/// immediately in `shop::purchase` and never exposes it to callers.
 public(package) fun new(): Witness {
     Witness()
 }
