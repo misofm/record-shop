@@ -44,6 +44,10 @@ bypassing Listing payment and enabled checks.
 A Floor price deliberately allows arbitrary overpayment, and the entire amount is
 non-refundable at the contract layer. Frontends should make this behavior explicit.
 
+A free (`fixed(0)`) or pay-what-you-want (`floor(0)`) Listing lets any address
+take Records up to `max_supply` for the cost of gas and storage. This package has
+no per-buyer limit; gate claims with a separate Distributor if that matters.
+
 Proceeds are forwarded to the tracks' royalty pool addresses with
 `release_revenue_forwarder::forward`, which writes no shared object. The published
 package links one exact version of the forwarder, so a later forwarder upgrade
@@ -61,7 +65,7 @@ provenance is in the sale's `RecordPurchasedEvent`, which claims no final owner.
 
 `make verify` runs success and abort-path unit tests plus two external compile-fail
 fixtures. The end-to-end scenario covers Release → capped Pressing → Witness
-authorization → derived shared Listing → nonzero buyer payment → returned Record →
+authorization → derived shared Listing → buyer payment → returned Record →
 buyer ownership → proceeds forwarded to the tracks' royalty pools.
 
 Report suspected vulnerabilities privately through this repository's GitHub

@@ -5,7 +5,8 @@
 `Listing<phantom Currency>` is a key-only object. Its stored fields are:
 
 - the exact Pressing ID;
-- `Pricing::Fixed(u64)` or `Pricing::Floor(u64)`;
+- `Pricing::Fixed(u64)` or `Pricing::Floor(u64)`, where a price of 0 is free or
+  pay what you want;
 - `enabled: bool`.
 
 The Release is not stored; `purchase` checks it against the Pressing's `release_id`.

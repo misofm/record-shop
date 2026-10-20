@@ -558,14 +558,64 @@ fun maximum_supply_boundary_rejects_the_next_purchase() {
     destroy(release_cap);
 }
 
-#[test, expected_failure(abort_code = listing::EInvalidPrice, location = listing)]
-fun listing_rejects_zero_price() {
+#[test]
+fun free_listing_presses_a_zero_price_record_and_forwards_nothing() {
     let mut ctx = tx_context::dummy();
-    let (mut pressing, cap) = a_pressing(id(@0xA), 100, &mut ctx);
-    let listing = listing::new<USD>(&mut pressing, &cap, listing::fixed(0));
+    let (release, release_cap) = a_release(&mut ctx);
+    let (mut pressing, cap) = a_pressing(object::id(&release), 100, &mut ctx);
+    pressing.authorize_distributor<Witness>(&cap);
+    let mut listing = listing::new<USD>(&mut pressing, &cap, listing::fixed(10));
+    listing.set_price(&cap, listing::fixed(0));
+    let record = listing.purchase(&mut pressing, &release, balance::zero());
+    assert_eq!(record.purchase_currency(), type_name::with_defining_ids<USD>());
+    assert_eq!(record.purchase_price(), 0);
+    assert_eq!(forwarded<USD>(), vector[]);
+    let events = event::events_by_type<pressing::RecordPurchasedEvent<Witness, USD>>();
+    assert_record_purchase(&events[0], object::id(&record), object::id(&pressing), 1, 0);
+    record.destroy();
     destroy(listing);
     destroy(pressing);
     destroy(cap);
+    destroy(release);
+    destroy(release_cap);
+}
+
+#[test, expected_failure(abort_code = listing::EWrongPayment, location = listing)]
+fun free_listing_rejects_payment() {
+    let mut ctx = tx_context::dummy();
+    let (release, release_cap) = a_release(&mut ctx);
+    let (mut pressing, cap) = a_pressing(object::id(&release), 100, &mut ctx);
+    pressing.authorize_distributor<Witness>(&cap);
+    let mut listing = listing::new<USD>(&mut pressing, &cap, listing::fixed(0));
+    let record = listing.purchase(&mut pressing, &release, payment(1));
+    record.destroy();
+    destroy(listing);
+    destroy(pressing);
+    destroy(cap);
+    destroy(release);
+    destroy(release_cap);
+}
+
+#[test]
+fun pay_what_you_want_accepts_nothing_or_more() {
+    let mut ctx = tx_context::dummy();
+    let (release, release_cap) = a_release(&mut ctx);
+    let (mut pressing, cap) = a_pressing(object::id(&release), 100, &mut ctx);
+    pressing.authorize_distributor<Witness>(&cap);
+    let mut listing = listing::new<USD>(&mut pressing, &cap, listing::floor(0));
+    let free = listing.purchase(&mut pressing, &release, balance::zero());
+    let paid = listing.purchase(&mut pressing, &release, payment(7));
+    assert_eq!(free.purchase_price(), 0);
+    assert_eq!(paid.purchase_price(), 7);
+    // Only the paid sale forwards: two tracks take 3 each.
+    assert_eq!(forwarded<USD>(), vector[6]);
+    free.destroy();
+    paid.destroy();
+    destroy(listing);
+    destroy(pressing);
+    destroy(cap);
+    destroy(release);
+    destroy(release_cap);
 }
 
 #[test, expected_failure(abort_code = pressing::EMaxSupplyReached, location = pressing)]

@@ -19,11 +19,10 @@ use sui::{balance::Balance, derived_object, event::emit};
 // === Errors ===
 
 const EUnauthorized: u64 = 0;
-const EInvalidPrice: u64 = 1;
-const EDisabled: u64 = 2;
-const EWrongPressing: u64 = 3;
-const EWrongPayment: u64 = 4;
-const EWrongRelease: u64 = 5;
+const EDisabled: u64 = 1;
+const EWrongPressing: u64 = 2;
+const EWrongPayment: u64 = 3;
+const EWrongRelease: u64 = 4;
 
 // === Structs ===
 
@@ -40,9 +39,10 @@ public struct ListingKey<phantom Currency>() has copy, drop, store;
 // === Enums ===
 
 public enum Pricing has copy, drop, store {
-    /// Payment must equal the price.
+    /// Payment must equal the price. `Fixed(0)` is free.
     Fixed(u64),
-    /// Payment must be at least the price; overpayment is kept.
+    /// Payment must be at least the price; overpayment is kept. `Floor(0)` is
+    /// pay what you want.
     Floor(u64),
 }
 
@@ -81,7 +81,6 @@ public fun new<Currency>(
     cap: &PressingAdminCap,
     pricing: Pricing,
 ): Listing<Currency> {
-    assert!(pricing.amount() > 0, EInvalidPrice);
     let pressing_id = object::id(pressing);
     let listing = Listing {
         id: derived_object::claim(pressing.uid_mut(cap), ListingKey<Currency>()),
@@ -153,7 +152,6 @@ public fun set_price<Currency>(
     pricing: Pricing,
 ) {
     self.authorize(cap);
-    assert!(pricing.amount() > 0, EInvalidPrice);
     if (self.pricing == pricing) return;
     self.pricing = pricing;
     emit(ListingPriceChangedEvent<Currency> { listing_id: object::id(self), pricing });

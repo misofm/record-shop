@@ -45,8 +45,12 @@ let record = listing.purchase(&mut pressing, &release, payment);
 transfer::public_transfer(record, recipient);
 ```
 
-- `fixed(price)` accepts exactly `price`.
-- `floor(price)` accepts at least `price` and forwards the entire payment.
+- `fixed(price)` accepts exactly `price`; `fixed(0)` is free, paid with a zero
+  `Balance`.
+- `floor(price)` accepts at least `price` and forwards the entire payment;
+  `floor(0)` is pay what you want.
+- A free Record stores the Listing's currency and a price of 0. A zero payment
+  forwards nothing.
 - The payment amount is fixed when the buyer signs, so a repricing can't
   charge more: a Fixed price that no longer matches, or a Floor above the
   payment, aborts with `EWrongPayment`.
