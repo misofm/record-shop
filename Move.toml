@@ -5,6 +5,6 @@ license = "FSL-1.1-ALv2"
 authors = ["Miso Labs, Inc. (build@miso.fm)"]
 
 [dependencies]
-musicos = { git = "https://github.com/misofm/musicos.git", rev = "f68189873e712ee931460cc00404db4f01391a24" }
-record = { git = "https://github.com/misofm/record.git", rev = "20d16dca71c4a7ebf1a5bd5fa7d1135b83b2fd30" }
-release_revenue_forwarder = { git = "https://github.com/misofm/release-revenue-forwarder.git", rev = "ba469f027511b787fb95887f42da411137046da2" }
+musicos = { git = "https://github.com/misofm/musicos.git", rev = "327a917b534d6965b46acd0596d4bdf3be9ccda1" }
+record = { git = "https://github.com/misofm/record.git", rev = "972d1810a955869a76669b7cb126b1a2010c686b" }
+release_revenue_forwarder = { git = "https://github.com/misofm/release-revenue-forwarder.git", rev = "0accaf7eca633f3248489352374fd97ec37dd6ca" }
