@@ -44,10 +44,13 @@ bypassing Listing payment and state checks.
 A Floor price deliberately allows arbitrary overpayment, and the entire amount is
 non-refundable at the contract layer. Frontends should make this behavior explicit.
 
-Funds use Sui's native object-address accumulator. Withdrawing proceeds requires
-mutable access to the Release UID, which `musicos::release` gates with the matching
-`ReleaseAdminCap`. Operators must ensure the relevant network enables object-funds
-withdrawal before relying on that withdrawal path.
+Proceeds are forwarded to the tracks' royalty pool addresses with
+`release_revenue_forwarder::forward`, which writes no shared object. The published
+package links one exact version of the forwarder, so a later forwarder upgrade
+cannot redirect this package's proceeds. Funds sent to a pool address wait there
+until the pool exists and has registered stakes; the small rounding remainder goes
+to the Release, where its administrator's `release_revenue_forwarder::redeem_and_forward`
+forwards it later.
 
 A Record stores neither its buyer nor its recipient; the event's transaction sender
 is the buyer. The caller must consume the returned Record in the same PTB, normally

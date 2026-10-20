@@ -8,9 +8,11 @@
 /// remain separate consensus lanes except for their common edition sequence.
 module record_shop::listing;
 
+use musicos::release::Release;
 use record::pressing::{Pressing, PressingAdminCap};
 use record::record::{Self, Record};
 use record_shop::witness;
+use release_revenue_forwarder::release_revenue_forwarder;
 use sui::{balance::{Self, Balance}, clock::Clock, derived_object, event::emit};
 
 // === Structs ===
@@ -142,8 +144,6 @@ public struct RecordSoldEvent<phantom Currency> has copy, drop {
     supply_after: u32,
     /// The immutable lifetime issuance ceiling for this edition.
     max_supply: u32,
-    /// The Release address receiving payment.
-    payment_recipient: address,
     /// The complete amount paid, including accepted Floor overpayment.
     proceeds_amount: u64,
 }
@@ -156,6 +156,7 @@ const EDisabled: u64 = 2;
 const EWrongPressing: u64 = 3;
 const EPriceChanged: u64 = 4;
 const EWrongPayment: u64 = 5;
+const EWrongRelease: u64 = 6;
 
 // === Public Functions ===
 
@@ -270,17 +271,20 @@ public fun set_state<Currency>(
 /// Purchase and return the next Record from the bound Pressing.
 ///
 /// `expected_pricing` protects the buyer against stale price or pricing-rule
-/// changes. The entire payment is deposited into the Release object's funds
-/// accumulator; a Floor overpayment is not refunded. The caller decides how to
+/// changes. The entire payment is forwarded straight to the royalty pools of
+/// the Release's tracks, split equally, with any rounding remainder sent to
+/// the Release; a Floor overpayment is not refunded. The caller decides how to
 /// transfer or compose the returned Record.
 public fun purchase<Currency>(
     self: &mut Listing<Currency>,
     pressing: &mut Pressing,
+    release: &Release,
     payment: Balance<Currency>,
     expected_pricing: Pricing,
     clock: &Clock,
 ): Record {
     assert!(object::id(pressing) == self.pressing_id, EWrongPressing);
+    assert!(object::id(release) == self.release_id, EWrongRelease);
     assert!(self.state == State::Enabled, EDisabled);
 
     assert!(expected_pricing == self.pricing, EPriceChanged);
@@ -294,9 +298,8 @@ public fun purchase<Currency>(
     let supply_before = pressing.supply();
     let max_supply = pressing.max_supply();
     let sold = pressing.mint<witness::Witness, Currency>(witness::new(), paid, clock);
-    let payment_recipient = self.release_id.to_address();
     self.total_proceeds = self.total_proceeds + (paid as u128);
-    payment.send_funds(payment_recipient);
+    release_revenue_forwarder::forward(release, payment);
 
     emit(RecordSoldEvent<Currency> {
         listing_id: object::id(self).to_address(),
@@ -314,7 +317,6 @@ public fun purchase<Currency>(
         supply_delta: 1,
         supply_after: pressing.supply(),
         max_supply,
-        payment_recipient,
         proceeds_amount: paid,
     });
 
@@ -491,7 +493,7 @@ public fun state_changed_event_fields<Currency>(
 #[test_only]
 public fun sold_event_fields<Currency>(
     event: RecordSoldEvent<Currency>,
-): (address, address, address, address, u16, u32, u64, u64, bool, u64, bool, u32, u32, u32, u32, address, u64) {
+): (address, address, address, address, u16, u32, u64, u64, bool, u64, bool, u32, u32, u32, u32, u64) {
     let RecordSoldEvent {
         listing_id,
         record_id,
@@ -508,7 +510,6 @@ public fun sold_event_fields<Currency>(
         supply_delta,
         supply_after,
         max_supply,
-        payment_recipient,
         proceeds_amount,
     } = event;
     (
@@ -527,7 +528,6 @@ public fun sold_event_fields<Currency>(
         supply_delta,
         supply_after,
         max_supply,
-        payment_recipient,
         proceeds_amount,
     )
 }

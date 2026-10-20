@@ -55,16 +55,19 @@ drop-only package witness after all sale checks and passes it directly to
 `purchase` performs these checks and effects atomically:
 
 1. require the exact bound Pressing;
-2. require enabled state;
-3. require the buyer's complete expected `Pricing` enum to equal the current rule;
-4. validate exact Fixed payment or minimum Floor payment;
-5. mint the next Record through the authorized witness;
-6. add the actual payment to the Listing's total proceeds;
-7. send the entire nonzero Balance to the Release funds accumulator;
-8. emit `RecordSoldEvent<Currency>` with the accepted pricing snapshot, the returned
+2. require the Listing's Release;
+3. require enabled state;
+4. require the buyer's complete expected `Pricing` enum to equal the current rule;
+5. validate exact Fixed payment or minimum Floor payment;
+6. mint the next Record through the authorized witness;
+7. add the actual payment to the Listing's total proceeds;
+8. forward the entire Balance with `release_revenue_forwarder::forward`, which
+   sends `payment / n` to each track's royalty pool address and the remainder to
+   the Release;
+9. emit `RecordSoldEvent<Currency>` with the accepted pricing snapshot, the returned
    Record's currency, actual price, and purchase timestamp, plus supply and
    proceeds snapshots;
-9. return the Record for PTB composition.
+10. return the Record for PTB composition.
 
 Move transaction atomicity rolls back the sequence increment, Record derivation,
 fund deposit, and events if any later command aborts.

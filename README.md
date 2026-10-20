@@ -36,13 +36,14 @@ pressing.share();
 listing.share();
 ```
 
-Buyers pass a mutable Listing, its mutable Pressing, a `Balance<Currency>`,
-their expected current pricing rule, and Sui's Clock. `purchase` returns the Record;
+Buyers pass a mutable Listing, its mutable Pressing, the Pressing's Release, a
+`Balance<Currency>`, their expected current pricing rule, and Sui's Clock. `purchase` returns the Record;
 the PTB must transfer or otherwise consume it.
 
 ```move
 let record = listing.purchase(
     &mut pressing,
+    &release,
     payment,
     expected_pricing,
     clock,
@@ -62,9 +63,11 @@ transfer::public_transfer(record, recipient);
   Clock timestamp as immutable purchase provenance. It does not store the buyer;
   indexers read the buyer as the sale event's transaction sender.
 
-All proceeds go to the Release object's native Sui funds accumulator. The Release
-administrator can withdraw through `release.uid_mut(&release_cap)` and
-`balance::withdraw_funds_from_object`.
+All proceeds go straight to the royalty pools of the Release's tracks through
+[`release_revenue_forwarder`](https://github.com/misofm/release-revenue-forwarder):
+each track's pool address receives `payment / n`, and the rounding remainder goes
+to the Release. No crank is needed between a sale and a holder's claim. A
+`Release` other than the Listing's aborts with `EWrongRelease`.
 
 ## Witness authority
 
