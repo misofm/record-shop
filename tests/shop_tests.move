@@ -62,11 +62,11 @@ fun a_clock(ctx: &mut TxContext): Clock {
     clock
 }
 
-/// The amount each forward reported, in order.
+/// The per-track amount each forward reported, in order.
 fun forwarded<Currency>(): vector<u64> {
     event::events_by_type<ReleaseRevenueForwardedEvent<Currency>>().map!(|event| {
-        let (_, amount) = release_revenue_forwarder::forwarded_event_fields(&event);
-        amount
+        let (_, value_per_track, _) = release_revenue_forwarder::forwarded_event_fields(&event);
+        value_per_track
     })
 }
 
@@ -81,12 +81,18 @@ fun assert_record_purchase<Currency>(
     number: u32,
     purchase_price: u64,
 ) {
-    let (event_record_id, event_pressing_id, event_number, event_purchase_price) =
-        pressing::purchased_event_fields(purchased);
+    let (
+        event_record_id,
+        event_pressing_id,
+        event_number,
+        event_purchase_price,
+        event_purchased_at_ms,
+    ) = pressing::purchased_event_fields(purchased);
     assert_eq!(event_record_id, record_id);
     assert_eq!(event_pressing_id, pressing_id);
     assert_eq!(event_number, number);
     assert_eq!(event_purchase_price, purchase_price);
+    assert_eq!(event_purchased_at_ms, PURCHASED_AT_MS);
 }
 
 fun set_pricings<Currency>(): vector<shop::Pricing> {
@@ -148,7 +154,7 @@ fun complete_sale_delivers_record_and_forwards_proceeds_to_the_tracks() {
     assert_eq!(object::id_address(&record), record::derive_address(pressing_id, 1));
     assert_eq!(pressing.supply(), 1);
     // Two tracks take 12 each; the remainder of 1 goes back to the Release.
-    assert_eq!(forwarded<USD>(), vector[24]);
+    assert_eq!(forwarded<USD>(), vector[12]);
 
     let purchased = event::events_by_type<pressing::RecordPurchasedEvent<Witness, USD>>();
     assert_eq!(purchased.length(), 1);
@@ -199,8 +205,8 @@ fun two_currencies_are_priced_separately_and_share_one_pressing_sequence() {
     assert_record_purchase(&eur_purchased[0], object::id(&second), pressing_id, 2, 9);
 
     // Each payment is split across the two tracks in its own currency.
-    assert_eq!(forwarded<USD>(), vector[4]);
-    assert_eq!(forwarded<EUR>(), vector[8]);
+    assert_eq!(forwarded<USD>(), vector[2]);
+    assert_eq!(forwarded<EUR>(), vector[4]);
 
     first.destroy();
     second.destroy();
@@ -218,7 +224,7 @@ fun floor_overpayments_are_forwarded_in_full() {
     let second = shop::purchase(&mut pressing, &release, payment<USD>(12), &clock);
 
     // Floor overpayments are forwarded in full, less each rounding remainder.
-    assert_eq!(forwarded<USD>(), vector[8, 12]);
+    assert_eq!(forwarded<USD>(), vector[4, 6]);
 
     first.destroy();
     second.destroy();
@@ -473,7 +479,7 @@ fun pay_what_you_want_accepts_nothing_or_more() {
     assert_eq!(free.purchase_price(), 0);
     assert_eq!(paid.purchase_price(), 7);
     // Only the paid sale forwards: two tracks take 3 each.
-    assert_eq!(forwarded<USD>(), vector[6]);
+    assert_eq!(forwarded<USD>(), vector[3]);
     free.destroy();
     paid.destroy();
     cleanup(pressing, cap, release, release_cap, clock);
@@ -516,7 +522,7 @@ fun floor_pricing_accepts_the_exact_price() {
     let clock = a_clock(&mut ctx);
     let record = shop::purchase(&mut pressing, &release, payment<USD>(10), &clock);
     assert_eq!(record.purchase_price(), 10);
-    assert_eq!(forwarded<USD>(), vector[10]);
+    assert_eq!(forwarded<USD>(), vector[5]);
     record.destroy();
     cleanup(pressing, cap, release, release_cap, clock);
 }
@@ -546,7 +552,7 @@ fun fixed_pricing_accepts_the_maximum_price() {
     let record = shop::purchase(&mut pressing, &release, payment<USD>(max), &clock);
     assert_eq!(record.purchase_price(), max);
     // Two tracks take half each; the remainder of 1 goes back to the Release.
-    assert_eq!(forwarded<USD>(), vector[max - 1]);
+    assert_eq!(forwarded<USD>(), vector[max / 2]);
     record.destroy();
     cleanup(pressing, cap, release, release_cap, clock);
 }
@@ -560,7 +566,7 @@ fun floor_repriced_down_keeps_the_overpayment() {
     let clock = a_clock(&mut ctx);
     let record = shop::purchase(&mut pressing, &release, payment<USD>(10), &clock);
     assert_eq!(record.purchase_price(), 10);
-    assert_eq!(forwarded<USD>(), vector[10]);
+    assert_eq!(forwarded<USD>(), vector[5]);
     record.destroy();
     cleanup(pressing, cap, release, release_cap, clock);
 }
