@@ -51,8 +51,8 @@ transfer::public_transfer(record, recipient);
   charge more: a Fixed price that no longer matches, or a Floor above the
   payment, aborts with `EWrongPayment`.
 - A currency the Pressing is not on sale in aborts in `sui::dynamic_field`.
-- `set_pricing` (add or reprice) and `remove_pricing` (stop selling) require the
-  Pressing's `PressingAdminCap`. `pricing<Currency>` returns the current
+- `set_pricing` (add or reprice) and `remove_pricing` (stop selling; a no-op if not
+  on sale) require the Pressing's `PressingAdminCap`. `pricing<Currency>` returns the current
   pricing, if any.
 - The returned Record stores the concrete currency type, actual amount paid and
   purchase time as immutable provenance. It does not store the buyer; indexers
