@@ -12,7 +12,7 @@ use sui::{
     event,
     test_scenario as ts,
 };
-use musicos::release::{Self, Release, ReleaseAdminCap};
+use miso_music::release::{Self, Release, ReleaseAdminCap};
 use record::{pressing::{Self, Pressing, PressingAdminCap}, record::{Self, Record}};
 use release_revenue_forwarder::release_revenue_forwarder::{Self, ReleaseRevenueForwardedEvent};
 use record_shop::{shop, witness::Witness};

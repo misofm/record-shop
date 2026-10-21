@@ -12,7 +12,7 @@ module record_shop::shop;
 // === Imports ===
 
 use sui::{balance::Balance, clock::Clock, dynamic_field as df, event::emit};
-use musicos::release::Release;
+use miso_music::release::Release;
 use record::{pressing::{Pressing, PressingAdminCap}, record::Record};
 use release_revenue_forwarder::release_revenue_forwarder;
 use record_shop::witness;
