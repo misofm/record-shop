@@ -19,17 +19,19 @@ Pressing because it owns the edition-local sequence and supply cap.
 
 ## Events
 
-Events are currency-typed and carry only facts that cannot be derived:
+Events are currency-typed and carry the full new value, so an indexer can track
+every Pressing's pricing from events alone, without reading the dynamic field:
 
-| Event | Fields |
-|---|---|
-| `PricingSetEvent<Currency>` | `pressing_id`, `pricing` |
-| `PricingRemovedEvent<Currency>` | `pressing_id` |
+| Event | Fields | Bytes |
+|---|---|---|
+| `PricingSetEvent<Currency>` | `pressing_id`, `pricing` (the `Pricing` enum value) | 41 |
+| `PricingRemovedEvent<Currency>` | `pressing_id` | 32 |
 
-No-op updates emit nothing. A sale emits no event of its own: `pressing::press`
-emits `RecordPurchasedEvent<witness::Witness, Currency>` with the Record,
-Pressing, number, and amount paid. Its type names the distributor and currency,
-the pricing follows from the pricing events, and the Release and edition join
+No-op updates emit nothing. A sale changes no Record Shop state and emits no
+event of its own: `pressing::press` emits `RecordPurchasedEvent<witness::Witness,
+Currency>` for the new Record, and `release_revenue_forwarder::forward` emits
+`ReleaseRevenueForwardedEvent<Currency>` when the payment pays the tracks. The
+event types name the distributor and currency, and the Release and edition join
 from `PressingCreatedEvent`.
 
 ## Authority

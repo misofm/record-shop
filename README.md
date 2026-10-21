@@ -91,9 +91,12 @@ that the capability is gone, and only then authorize
 | `PricingSetEvent<Currency>` | `pressing_id`, `pricing` |
 | `PricingRemovedEvent<Currency>` | `pressing_id` |
 
-`pricing` is the `Pricing` enum value. No-op updates emit nothing. A sale emits
-only `record::pressing::RecordPurchasedEvent<record_shop::witness::Witness, Currency>`
-with the Record, Pressing, number and amount paid.
+`pricing` is the full `Pricing` enum value (41 BCS bytes with the ID), so
+indexers track pricing from events alone. No-op updates emit nothing. A sale
+emits no Record Shop event: `record`'s
+`RecordPurchasedEvent<record_shop::witness::Witness, Currency>` announces the
+Record, and `release_revenue_forwarder`'s `ReleaseRevenueForwardedEvent<Currency>`
+the forwarded payment, when it pays the tracks.
 
 ## Verify
 
