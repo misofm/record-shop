@@ -24,12 +24,10 @@ const EWrongPayment: u64 = 1;
 
 // === Structs ===
 
-/// Stores a Pressing's `Pricing` in `Currency`.
 public struct PricingKey<phantom Currency>() has copy, drop, store;
 
 // === Enums ===
 
-/// How a Pressing is priced in one currency.
 public enum Pricing has copy, drop, store {
     /// Payment must equal the price. `Fixed(0)` is free.
     Fixed(u64),
@@ -46,27 +44,23 @@ public struct PricingSetEvent<phantom Currency> has copy, drop {
     pricing: Pricing,
 }
 
-/// Emitted when a Pressing stops selling in `Currency`.
 public struct PricingRemovedEvent<phantom Currency> has copy, drop {
     pressing_id: ID,
 }
 
 // === Public Functions ===
 
-/// Pricing where payment must equal `price`.
 public fun fixed(price: u64): Pricing {
     Pricing::Fixed(price)
 }
 
-/// Pricing where payment must be at least `price`.
 public fun floor(price: u64): Pricing {
     Pricing::Floor(price)
 }
 
-/// Presses the next Record and forwards the whole payment, including any Floor
-/// overpayment, to the Release's tracks' royalty pools. Aborts in
-/// `dynamic_field` if the Pressing is not for sale in `Currency`. The caller
-/// transfers or composes the Record.
+/// Forwards the whole payment, including any Floor overpayment, to the
+/// Release's tracks' royalty pools. Aborts in `dynamic_field` if the Pressing
+/// is not for sale in `Currency`.
 public fun purchase<Currency>(
     pressing: &mut Pressing,
     release: &Release,
@@ -86,7 +80,6 @@ public fun purchase<Currency>(
 
 // === View Functions ===
 
-/// The Pressing's pricing in `Currency`, or none if it is not on sale in it.
 public fun pricing<Currency>(pressing: &Pressing): Option<Pricing> {
     let uid = pressing.uid();
     if (df::exists(uid, PricingKey<Currency>())) {
@@ -111,8 +104,7 @@ public fun is_fixed(self: &Pricing): bool {
 
 // === Admin Functions ===
 
-/// Puts the Pressing on sale in `Currency` at `pricing`, or reprices it. A
-/// no-op if unchanged.
+/// A no-op if unchanged.
 public fun set_pricing<Currency>(
     pressing: &mut Pressing,
     cap: &PressingAdminCap,

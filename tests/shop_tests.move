@@ -35,7 +35,6 @@ fun a_release(ctx: &mut TxContext): (Release, ReleaseAdminCap) {
     release::new_for_testing(consents, ctx)
 }
 
-/// An authorized Pressing for `release` with the Record Shop on sale in USD.
 fun a_shop(
     release: &Release,
     max_supply: u32,
