@@ -7,7 +7,7 @@ module record_shop::witness;
 
 public struct Witness() has drop;
 
-// === Private Functions ===
+// === Package Functions ===
 
 public(package) fun new(): Witness {
     Witness()
