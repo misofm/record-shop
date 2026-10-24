@@ -19,14 +19,18 @@ replenish this lifetime cap. Editions are `u16` values created sequentially from
 
 ## Sale flow
 
-The release administrator creates a Pressing, authorizes the exact witness type,
-prices it in one or more currencies, and shares it:
+The release administrator sets the Release's split with
+[`release_license`](https://github.com/misofm/framework/tree/main/release_license),
+creates a Pressing, authorizes the exact witness type, prices it in one or more
+currencies, and shares it:
 
 ```move
+release_license::release_license::set_split(&mut release, &release_cap, shares);
 pressing.authorize_distributor<record_shop::witness::Witness>(&pressing_cap);
 record_shop::shop::set_pricing<SUI>(
     &mut pressing,
     &pressing_cap,
+    &release,
     record_shop::shop::fixed(1_000_000_000),
 );
 pressing.share();
@@ -52,16 +56,20 @@ transfer::public_transfer(record, recipient);
   payment, aborts with `EWrongPayment`.
 - A currency the Pressing is not on sale in aborts in `sui::dynamic_field`.
 - `set_pricing` (add or reprice) and `remove_pricing` (stop selling; a no-op if not
-  on sale) require the Pressing's `PressingAdminCap`. `pricing<Currency>` returns the current
+  on sale) require the Pressing's `PressingAdminCap`. `set_pricing` also takes the
+  Pressing's Release, aborting with `EWrongRelease` for another Release and
+  `ENoSplit` when the Release has no `release_license` split. A split can be
+  replaced but never removed, so a priced Pressing's sales never abort for a
+  missing split. `pricing<Currency>` returns the current
   pricing, if any.
 - The returned Record stores the concrete currency type, actual amount paid and
   purchase time as immutable provenance. It does not store the buyer; indexers
   read it as the sale event's transaction sender.
 
 All proceeds go straight to the royalty pools of the Release's tracks through
-[`release_revenue_forwarder`](https://github.com/misofm/release-revenue-forwarder):
-each track's pool address receives `payment / n`, and the rounding remainder goes
-to the Release. No crank is needed between a sale and a holder's claim. A
+`release_license::forward`: each track's pool address receives its share of the
+Release's basis-point split, rounded down, and the rounding remainder goes to the
+Release. No crank is needed between a sale and a holder's claim. A
 `Release` other than the Pressing's aborts with `EWrongRelease`.
 
 ## Witness authority
@@ -95,8 +103,8 @@ that the capability is gone, and only then authorize
 indexers track pricing from events alone. No-op updates emit nothing. A sale
 emits no Record Shop event: `record`'s
 `RecordPurchasedEvent<record_shop::witness::Witness, Currency>` announces the
-Record, and `release_revenue_forwarder`'s `ReleaseRevenueForwardedEvent<Currency>`
-the forwarded payment, when it pays the tracks.
+Record, and `release_license`'s `ReleaseRevenueForwardedEvent<Currency>` the
+forwarded payment, when it pays the tracks.
 
 ## Verify
 

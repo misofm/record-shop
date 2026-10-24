@@ -8,13 +8,14 @@ module record_shop::shop;
 use sui::{balance::Balance, clock::Clock, dynamic_field as df, event::emit};
 use miso_music::release::Release;
 use record::{pressing::{Pressing, PressingAdminCap}, record::Record};
-use release_revenue_forwarder::release_revenue_forwarder;
+use release_license::release_license;
 use record_shop::witness;
 
 // === Errors ===
 
 const EWrongRelease: u64 = 0;
 const EWrongPayment: u64 = 1;
+const ENoSplit: u64 = 2;
 
 // === Structs ===
 
@@ -61,7 +62,7 @@ public fun purchase<Currency>(
         Pricing::Floor(price) => assert!(paid >= *price, EWrongPayment),
     };
     let record = pressing.press<witness::Witness, Currency>(witness::new(), paid, clock);
-    release_revenue_forwarder::forward(release, payment);
+    release_license::forward(release, payment);
     record
 }
 
@@ -92,8 +93,11 @@ public fun is_fixed(self: &Pricing): bool {
 public fun set_pricing<Currency>(
     pressing: &mut Pressing,
     cap: &PressingAdminCap,
+    release: &Release,
     pricing: Pricing,
 ) {
+    assert!(object::id(release) == pressing.release_id(), EWrongRelease);
+    assert!(release_license::has_split(release), ENoSplit);
     let uid = pressing.uid_mut(cap);
     if (df::exists(uid, PricingKey<Currency>())) {
         let current: &mut Pricing = df::borrow_mut(uid, PricingKey<Currency>());

@@ -49,12 +49,14 @@ take Records up to `max_supply` for the cost of gas and storage. This package ha
 no per-buyer limit; gate claims with a separate Distributor if that matters.
 
 Proceeds are forwarded to the tracks' royalty pool addresses with
-`release_revenue_forwarder::forward`, which writes no shared object. The published
-package links one exact version of the forwarder, so a later forwarder upgrade
-cannot redirect this package's proceeds. Funds sent to a pool address wait there
-until the pool exists and has registered stakes; the small rounding remainder goes
-to the Release, where its administrator's `release_revenue_forwarder::redeem_and_forward`
-forwards it later.
+`release_license::forward`, which divides them by the Release's basis-point split
+and writes no shared object. The published package links one exact version of
+`release_license`, so a later upgrade cannot redirect this package's proceeds. The
+Release administrator can replace the split at any time, which changes how later
+sales divide among the tracks; it cannot remove it, and `set_pricing` requires one.
+Funds sent to a pool address wait there until the pool exists and has registered
+stakes; the small rounding remainder goes to the Release, where its administrator's
+`release_license::redeem_and_forward` forwards it later.
 
 A Record stores neither its buyer nor its recipient; the event's transaction sender
 is the buyer. It does store the `Clock` time of the purchase. The caller must consume the returned Record in the same PTB, normally
