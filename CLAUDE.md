@@ -18,7 +18,7 @@
   `public(package)` constructor used only by the purchase path.
 - Keep Listings derived directly from Pressings with no singleton Record Shop.
 - Keep `purchase` composable: it returns the Record and forwards all payment to
-  the tracks' royalty pools with `release_revenue_forwarder::forward`.
+  the tracks' royalty pools with `release_license::forward`.
 - Run `make verify` after changes.
 - When available, use the official Sui documentation MCP server at
   `https://sui.mcp.kapa.ai` for current API verification.
