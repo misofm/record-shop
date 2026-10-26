@@ -10,6 +10,9 @@
 ## Project rules
 
 - Use Move 2024 syntax and composable public functions.
+- Import modules, functions, and types with `use`; never write fully qualified
+  `address::module::member` paths inline, and use the imported module name in
+  test attributes (`location = pressing`, not `location = record::pressing`).
 - Identify event types through phantom type parameters when the type is known
   at emission. Do not duplicate those identities as `TypeName`, strings, or bytes
   in event payloads. Keep runtime type data only when it cannot be represented
