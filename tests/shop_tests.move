@@ -21,7 +21,6 @@ use record_shop::{shop, witness::Witness};
 const PURCHASED_AT_MS: u64 = 1_726_000_123;
 
 public struct USD() has drop;
-
 public struct EUR() has drop;
 
 fun id(address: address): ID {
