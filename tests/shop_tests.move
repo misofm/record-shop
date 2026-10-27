@@ -21,6 +21,7 @@ use record_shop::{shop, witness::Witness};
 const PURCHASED_AT_MS: u64 = 1_726_000_123;
 
 public struct USD() has drop;
+
 public struct EUR() has drop;
 
 fun id(address: address): ID {
@@ -228,7 +229,6 @@ fun floor_overpayments_are_forwarded_in_full() {
 
     let first = shop::purchase(&mut pressing, &release, payment<USD>(9), &clock);
     let second = shop::purchase(&mut pressing, &release, payment<USD>(12), &clock);
-
     assert_eq!(forwarded<USD>(), vector[vector[6, 2], vector[8, 3]]);
 
     first.destroy();
