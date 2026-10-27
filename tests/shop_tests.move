@@ -126,7 +126,6 @@ fun complete_sale_delivers_record_and_forwards_proceeds_to_the_tracks() {
     let final_recipient = @0xC;
     let price = 25;
     let mut scenario = ts::begin(seller);
-
     let (mut release, release_cap) = a_release(scenario.ctx());
     let release_id = object::id(&release);
     let (mut pressing, pressing_cap) = pressing::new(&mut release, &release_cap, 1, 1);
@@ -134,19 +133,16 @@ fun complete_sale_delivers_record_and_forwards_proceeds_to_the_tracks() {
     pressing.authorize_distributor<Witness>(&pressing_cap);
     shop::set_pricing<USD>(&mut pressing, &pressing_cap, &release, shop::fixed(price));
     assert_eq!(pressing_id.to_address(), pressing::derive_address(release_id, 1));
-
     release.publish(&release_cap);
     pressing.share();
     transfer::public_transfer(release_cap, seller);
     transfer::public_transfer(pressing_cap, seller);
-
     scenario.next_tx(buyer);
     let mut pressing = scenario.take_shared<Pressing>();
     let release = scenario.take_shared<Release>();
     let clock = a_clock(scenario.ctx());
     let record = shop::purchase(&mut pressing, &release, payment<USD>(price), &clock);
     let record_id = object::id(&record);
-
     assert_eq!(record.release_id(), release_id);
     assert_eq!(record.pressing_id(), pressing_id);
     assert_eq!(record.edition(), 1);
@@ -162,21 +158,17 @@ fun complete_sale_delivers_record_and_forwards_proceeds_to_the_tracks() {
         release_license::release_revenue_forwarded_event_fields(&forwarded_events[0]);
     assert_eq!(event_release_id, release_id);
     assert_eq!(hash, *release_license::split_hash(&release));
-
     let purchased = event::events_by_type<pressing::RecordPurchasedEvent<Witness, USD>>();
     assert_eq!(purchased.length(), 1);
     assert_record_purchase(&purchased[0], record_id, pressing_id, 1, price);
-
     ts::return_shared(pressing);
     ts::return_shared(release);
     clock.destroy_for_testing();
     transfer::public_transfer(record, final_recipient);
-
     scenario.next_tx(final_recipient);
     let owned_record = scenario.take_from_sender<Record>();
     assert_eq!(object::id(&owned_record), record_id);
     owned_record.destroy();
-
     scenario.next_tx(seller);
     destroy(scenario.take_from_sender<ReleaseAdminCap>());
     destroy(scenario.take_from_sender<PressingAdminCap>());
@@ -193,7 +185,6 @@ fun two_currencies_are_priced_separately_and_share_one_pressing_sequence() {
     let clock = a_clock(&mut ctx);
     assert_eq!(shop::pricing<USD>(&pressing), option::some(shop::fixed(5)));
     assert_eq!(shop::pricing<EUR>(&pressing), option::some(shop::floor(7)));
-
     let first = shop::purchase(&mut pressing, &release, payment<USD>(5), &clock);
     let second = shop::purchase(&mut pressing, &release, payment<EUR>(9), &clock);
     assert_eq!(first.number(), 1);
@@ -203,17 +194,14 @@ fun two_currencies_are_priced_separately_and_share_one_pressing_sequence() {
     assert_eq!(second.purchase_currency(), type_name::with_defining_ids<EUR>());
     assert_eq!(second.purchase_price(), 9);
     assert_eq!(pressing.supply(), 2);
-
     let usd_purchased = event::events_by_type<pressing::RecordPurchasedEvent<Witness, USD>>();
     let eur_purchased = event::events_by_type<pressing::RecordPurchasedEvent<Witness, EUR>>();
     assert_eq!(usd_purchased.length(), 1);
     assert_eq!(eur_purchased.length(), 1);
     assert_record_purchase(&usd_purchased[0], object::id(&first), pressing_id, 1, 5);
     assert_record_purchase(&eur_purchased[0], object::id(&second), pressing_id, 2, 9);
-
     assert_eq!(forwarded<USD>(), vector[vector[3, 1]]);
     assert_eq!(forwarded<EUR>(), vector[vector[6, 2]]);
-
     first.destroy();
     second.destroy();
     cleanup(pressing, cap, release, release_cap, clock);
@@ -225,11 +213,9 @@ fun floor_overpayments_are_forwarded_in_full() {
     let (release, release_cap) = a_release(&mut ctx);
     let (mut pressing, cap) = a_shop(&release, 100, shop::floor(7), &mut ctx);
     let clock = a_clock(&mut ctx);
-
     let first = shop::purchase(&mut pressing, &release, payment<USD>(9), &clock);
     let second = shop::purchase(&mut pressing, &release, payment<USD>(12), &clock);
     assert_eq!(forwarded<USD>(), vector[vector[6, 2], vector[8, 3]]);
-
     first.destroy();
     second.destroy();
     cleanup(pressing, cap, release, release_cap, clock);
@@ -241,19 +227,15 @@ fun pricing_is_cap_gated_and_observable() {
     let (release, release_cap) = a_release(&mut ctx);
     let (mut pressing, cap) = a_pressing(object::id(&release), 100, &mut ctx);
     assert_eq!(shop::pricing<USD>(&pressing), option::none());
-
     shop::set_pricing<USD>(&mut pressing, &cap, &release, shop::fixed(10));
     assert_eq!(shop::pricing<USD>(&pressing), option::some(shop::fixed(10)));
     assert_eq!(shop::fixed(10).amount(), 10);
     assert_eq!(shop::floor(12).amount(), 12);
-
     shop::set_pricing<USD>(&mut pressing, &cap, &release, shop::floor(12));
     assert_eq!(shop::pricing<USD>(&pressing), option::some(shop::floor(12)));
     assert_eq!(shop::pricing<EUR>(&pressing), option::none());
-
     shop::remove_pricing<USD>(&mut pressing, &cap);
     assert_eq!(shop::pricing<USD>(&pressing), option::none());
-
     destroy(pressing);
     destroy(cap);
     destroy(release);
@@ -266,7 +248,6 @@ fun pricing_events_capture_only_real_changes() {
     let (release, release_cap) = a_release(&mut ctx);
     let (mut pressing, cap) = a_pressing(object::id(&release), 100, &mut ctx);
     let pressing_id = object::id(&pressing);
-
     shop::remove_pricing<USD>(&mut pressing, &cap);
     shop::set_pricing<USD>(&mut pressing, &cap, &release, shop::fixed(10));
     shop::set_pricing<USD>(&mut pressing, &cap, &release, shop::fixed(10));
@@ -277,7 +258,6 @@ fun pricing_events_capture_only_real_changes() {
     shop::remove_pricing<USD>(&mut pressing, &cap);
     shop::remove_pricing<USD>(&mut pressing, &cap);
     shop::set_pricing<USD>(&mut pressing, &cap, &release, shop::fixed(7));
-
     let set = event::events_by_type<shop::PricingSetEvent<USD>>();
     let (event_pressing_id, _) = shop::set_event_fields(&set[0]);
     assert_eq!(event_pressing_id, pressing_id);
@@ -289,7 +269,6 @@ fun pricing_events_capture_only_real_changes() {
     assert_eq!(removed.length(), 1);
     assert_eq!(shop::removed_event_fields(&removed[0]), pressing_id);
     assert_eq!(event::events_by_type<shop::PricingSetEvent<EUR>>().length(), 0);
-
     destroy(pressing);
     destroy(cap);
     destroy(release);
