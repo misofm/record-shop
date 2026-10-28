@@ -1,4 +1,4 @@
-> **Moved.** This repository is archived. Its packages now live in [`misofm/framework`](https://github.com/misofm/framework/tree/main/record/record_shop) under `record/record_shop/`.
+> **Moved.** This repository is archived. Its package now lives in [`misofm/framework`](https://github.com/misofm/framework/tree/main/record_shop) under `record_shop/`.
 
 # miso-record-shop
 
