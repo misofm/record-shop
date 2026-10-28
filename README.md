@@ -1,3 +1,5 @@
+> **Moved.** This repository is archived. Its packages now live in [`misofm/framework`](https://github.com/misofm/framework/tree/main/record/record_shop) under `record/record_shop/`.
+
 # miso-record-shop
 
 `record_shop` is the first-party fixed/floor-price sales package for Miso
